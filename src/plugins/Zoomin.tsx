@@ -23,6 +23,6 @@ export default class Zoomin extends Plugin {
             x: pos.x * (1 - 1/ZOOM_RATE),
             y: pos.y * (1 - 1/ZOOM_RATE)
         }
-        dragNode.resetPos(newPos);
+        // dragNode.resetPos(newPos);
     }
 }

@@ -20,6 +20,6 @@ export default {
             x: pos.x * (1 - newScale),
             y: pos.y * (1 - newScale)
         }
-        dragNode.resetPos(newPos);
+        // dragNode.resetPos(newPos);
     }
 } as IStageEvent;

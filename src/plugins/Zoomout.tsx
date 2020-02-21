@@ -23,6 +23,6 @@ export default class Zoomout extends Plugin {
             x: pos.x * (1 - ZOOM_RATE),
             y: pos.y * (1 - ZOOM_RATE)
         }
-        dragNode.resetPos(newPos);
+        // dragNode.resetPos(newPos);
     }
 }
