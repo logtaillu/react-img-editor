@@ -8,6 +8,16 @@
   url('//at.alicdn.com/t/font_1621501_k00ymzzhtbl.svg?t=1580659190858#iconfont') format('svg'); /* iOS 4.1- */
 }
 
+@font-face {
+  font-family: 'iconfontappend'; 
+  src: url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.eot');
+  src: url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.eot?#iefix') format('embedded-opentype'),
+  url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.woff2') format('woff2'),
+  url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.woff') format('woff'),
+  url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.ttf') format('truetype'),
+  url('//at.alicdn.com/t/font_1649800_924v2lnfyqo.svg#iconfont') format('svg');
+}
+
 .iconfont {
   font-family: "iconfont" !important;
   font-size: 16px;
@@ -71,10 +81,18 @@
 .icon-repeal:before {
   content: "\e78a";
 }
+.icon-plus,.icon-minus,.icon-rotate{
+  font-family: "iconfontappend" !important;
+}
 .icon-plus::before{
-  content: "\E625";
+  content: "";
+  content: "\e898";
 }
 
 .icon-minus::before{
-  content: "\E623";
+  content: "\E898";
+}
+
+.icon-rotate::before{
+  content: "\E901";
 }

@@ -4,7 +4,7 @@ import { DrawEventPramas } from '../type';
 import PointUtil from '../tools/PointUtil';
 export default class Rotate extends Plugin {
     name = "rotate";
-    iconfont = 'iconfont icon-square';
+    iconfont = 'iconfont icon-rotate';
     title = '旋转';
 
     rotate(child, x, y, scale) {
