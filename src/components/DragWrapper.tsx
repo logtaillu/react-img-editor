@@ -10,11 +10,20 @@ export default class DragWrapper extends React.Component<any, any>{
         };
     }
 
-    resetPos(pos: { x?: number, y?: number }) {
-        this.setState({
+    setPos(pos: { x: number, y: number }) {
+        this.setState(pos);
+    }
+
+    resetPos(pos: { x?: number, y?: number }, reset: boolean = false) {
+        const newpos = {
             x: this.state.x + (pos.x || 0),
             y: this.state.y + (pos.y || 0)
-        });
+        };
+        if (reset) {
+            this.dragMove(null, { ...newpos, node: this.dragref });
+        } else {
+            this.setState(newpos);
+        }
     }
 
     getBounds(node: any) {

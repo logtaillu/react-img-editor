@@ -6,6 +6,7 @@ import { prefixCls } from '../constants'
 import { uuid } from '../utils'
 import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
 import DragWrapper from './DragWrapper'
+import PointUtil from '../tools/PointUtil'
 interface PaletteProps {
   width: number;
   height: number;
@@ -57,6 +58,12 @@ export default function Palette(props: PaletteProps) {
       }
     });
     props.getStage && props.getStage(stageRef.current)
+    if (dragRef && dragRef.current) {
+      const dragNode = dragRef.current;
+      const center = PointUtil.getCenterPos(dragNode);
+
+      dragNode.setPos({ x: center.x, y: center.y });
+    }
   }
 
   function generateImageData(imgObj: any, width: number, height: number) {

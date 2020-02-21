@@ -9,7 +9,7 @@ export default {
         };
         return pointPos;
     },
-    getCenterPos(dragNode: DragWrapper, stage: any) {
+    getCenterPos(dragNode: DragWrapper) {
         const bounds = dragNode.getBounds(dragNode.dragref);
         // 中点位置
         const pos = {
