@@ -285,6 +285,7 @@
 .react-img-editor {
   text-align: center;
   position: relative;
+  margin: 0 auto;
 }
 .react-img-editor *:focus {
   outline: none;
@@ -319,11 +320,7 @@
   align-items: center;
   justify-content: center;
   height: 42px;
-  position: fixed;
   background-color: black;
-  bottom: 100px;
-  left: 0;
-  right: 0;
   z-index: 2000;
 }
 .react-img-editor-toolbar-icon {

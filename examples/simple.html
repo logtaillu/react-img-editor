@@ -299,12 +299,13 @@ function Example() {
   return (
     &lt;&gt;
       &lt;ReactImgEditor
-        src={image2}
+        src={image1}
         plugins={[]}
         width={800}
         getStage={setStage}
         defaultPluginName=<span class="hljs-string">""</span>
         stageEvents={[<span class="hljs-string">"zoomOnWheel"</span>]}
+        style={{border:<span class="hljs-string">"1px solid #ddd"</span>}}
       /&gt;
       &lt;div style={{ marginTop: <span class="hljs-string">'50px'</span> }}&gt;
         &lt;button onClick={downloadImage}&gt;download&lt;/button&gt;

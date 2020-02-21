@@ -200,12 +200,15 @@ function Example() {
   // const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'
 
   return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_src_index__WEBPACK_IMPORTED_MODULE_2__["default"], {
-    src: image2,
+    src: image1,
     plugins: [],
     width: 800,
     getStage: setStage,
     defaultPluginName: "",
-    stageEvents: ["zoomOnWheel"]
+    stageEvents: ["zoomOnWheel"],
+    style: {
+      border: "1px solid #ddd"
+    }
   }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     style: {
       marginTop: '50px'

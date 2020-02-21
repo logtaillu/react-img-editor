@@ -53329,7 +53329,10 @@ function Palette(props) {
     currentPluginRef.current = props.currentPlugin;
   }, [props.currentPlugin]);
   var dragcls = props.currentPlugin ? "nodarg" : "candrag";
-  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_DragWrapper__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    className: "offset-bound",
+    style: style
+  }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_DragWrapper__WEBPACK_IMPORTED_MODULE_5__["default"], {
     ref: function ref(node) {
       return dragRef.current = node;
     },
@@ -53341,7 +53344,7 @@ function Palette(props) {
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     id: containerIdRef.current,
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-container")
-  }))));
+  })))));
 }
 
 /***/ }),
@@ -53809,9 +53812,7 @@ function ReactImageEditor(props) {
   return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
     className: "react-img-editor",
     style: style
-  }, imageObj ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
-    className: "offset-bound"
-  }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Palette__WEBPACK_IMPORTED_MODULE_1__["default"], {
+  }, imageObj ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Palette__WEBPACK_IMPORTED_MODULE_1__["default"], {
     width: props.width,
     height: props.height - 42,
     imageObj: imageObj,
