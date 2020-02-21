@@ -28,12 +28,13 @@ function Example() {
   return (
     <>
       <ReactImgEditor
-        src={image2}
+        src={image1}
         plugins={[]}
         width={800}
         getStage={setStage}
         defaultPluginName=""
         stageEvents={["zoomOnWheel"]}
+        style={{border:"1px solid #ddd"}}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>

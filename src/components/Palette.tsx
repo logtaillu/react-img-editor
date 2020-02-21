@@ -242,12 +242,14 @@ export default function Palette(props: PaletteProps) {
 
   const dragcls = props.currentPlugin ? "nodarg" : "candrag";
   return (
-    <DragWrapper ref={node => dragRef.current = node} disabled={!!props.currentPlugin}>
-      <div className={`react-img-editor-dragbox ${dragcls}`}>
-        <div className={`${prefixCls}-palette`}>
-          <div id={containerIdRef.current} className={`${prefixCls}-container`} />
+    <div className="offset-bound" style={style}>
+      <DragWrapper ref={node => dragRef.current = node} disabled={!!props.currentPlugin}>
+        <div className={`react-img-editor-dragbox ${dragcls}`}>
+          <div className={`${prefixCls}-palette`}>
+            <div id={containerIdRef.current} className={`${prefixCls}-container`} />
+          </div>
         </div>
-      </div>
-    </DragWrapper>
+      </DragWrapper>
+    </div>
   )
 }

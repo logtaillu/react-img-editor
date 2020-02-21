@@ -77,7 +77,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     <div className="react-img-editor" style={style}>
       {
         imageObj ? (
-          <div className="offset-bound">
+          <div>
             <Palette
               width={props.width!}
               height={props.height! - 42}
