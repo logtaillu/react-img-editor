@@ -11,3 +11,6 @@ export const transformerStyle = {
   anchorSize: 6,
   rotateAnchorOffset: 20,
 }
+
+export const ZOOM_RATE = 1.2;
+export const ZOOM_WHEEL_RATE = 1.01;

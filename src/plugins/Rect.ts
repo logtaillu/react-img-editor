@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventPramas, PluginParamName, PluginParamValue } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Rect extends Plugin {
   name = 'rect'
@@ -107,7 +108,7 @@ export default class Rect extends Plugin {
     if (!this.isPaint || this.transformer) return
 
     if (!this.started) {
-      const pos = stage.getPointerPosition()
+      const pos = PointUtil.getPointPos(stage);
       this.startPoint = [pos.x, pos.y]
       this.lastRect = new Konva.Rect({
         id: uuid(),
@@ -131,7 +132,7 @@ export default class Rect extends Plugin {
       this.started = true
     }
 
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
     this.lastRect.width(pos.x - this.startPoint[0])
     this.lastRect.height(pos.y - this.startPoint[1])
     layer.batchDraw()

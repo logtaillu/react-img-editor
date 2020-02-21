@@ -21,19 +21,19 @@ function Example() {
   }
 
   const image1 = 'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'
-  // const image2 = 'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'
+  const image2 = 'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'
   // const image3 = 'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'
   // const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'
 
   return (
     <>
       <ReactImgEditor
-        src={image1}
-        width={736}
-        height={414}
+        src={image2}
         plugins={[]}
+        width={800}
         getStage={setStage}
-        defaultPluginName="text"
+        defaultPluginName=""
+        stageEvents={["zoomOnWheel"]}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>

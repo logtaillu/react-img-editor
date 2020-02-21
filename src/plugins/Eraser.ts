@@ -2,6 +2,7 @@ import Konva from 'konva'
 import Plugin from './Plugin'
 import { DrawEventPramas, PluginParamName, PluginParamValue } from '../type'
 import { uuid } from '../utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Eraser extends Plugin {
   name = 'eraser'
@@ -17,7 +18,7 @@ export default class Eraser extends Plugin {
 
   onDrawStart = (drawEventPramas: DrawEventPramas) => {
     const {stage, layer, paramValue} = drawEventPramas
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
     this.isPaint = true
     this.lastLine = new Konva.Line({
       id: uuid(),
@@ -33,7 +34,7 @@ export default class Eraser extends Plugin {
     if (!this.isPaint) return
 
     const {stage, layer} = drawEventPramas
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
     const newPoints = this.lastLine.points().concat([pos.x, pos.y])
     this.lastLine.points(newPoints)
     layer.batchDraw()

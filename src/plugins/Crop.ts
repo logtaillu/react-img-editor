@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventPramas } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
+import PointUtil from '../tools/PointUtil'
 
 const toolbarWidth = 275
 const toolbarHeight = 40
@@ -138,7 +139,7 @@ export default class Crop extends Plugin {
     if (document.getElementById(this.toolbarId)) return
     this.isPaint = true
 
-    const startPos = stage.getPointerPosition()
+    const startPos = PointUtil.getPointPos(stage);
 
     this.virtualLayer = new Konva.Layer()
     stage.add(this.virtualLayer)
@@ -180,7 +181,7 @@ export default class Crop extends Plugin {
     if (document.getElementById(this.toolbarId)) return
 
     const {stage} = drawEventPramas
-    const endPos = stage.getPointerPosition()
+    const endPos = PointUtil.getPointPos(stage);
     // 绘制初始裁剪区域
     this.rect.width(endPos.x - this.getRectX())
     this.rect.height(endPos.y - this.getRectY())

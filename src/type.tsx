@@ -11,6 +11,7 @@ export interface DrawEventPramas {
   pixelRatio: number;
   event?: any;
   plugins: Plugin[];
+  dragNode: any;
 }
 export type PluginParamName = 'strokeWidth' | 'color' | 'fontSize' | 'lineType'
 export interface PluginParamValue {

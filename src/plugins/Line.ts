@@ -5,19 +5,19 @@ import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
 
-export default class Arrow extends Plugin {
-  name = 'arrow'
-  iconfont = 'iconfont icon-arrow'
-  title = '插入箭头'
-  params = ['strokeWidth', 'color'] as PluginParamName[]
+export default class Line extends Plugin {
+  name = 'line'
+  iconfont = 'iconfont icon-line2'
+  title = '插入直线'
+  params = ['strokeWidth', 'lineType', 'color'] as PluginParamName[]
   defalutParamValue = {
     strokeWidth: 2,
     lineType: 'solid',
     color: '#F5222D',
   } as PluginParamValue
-  shapeName = 'arrow'
+  shapeName = 'line'
 
-  lastArrow: any = null
+  lastLine: any = null
   transformer: any = null
   selectedNode: any = null
   isPaint = false
@@ -25,16 +25,16 @@ export default class Arrow extends Plugin {
   startPoints = [0, 0]
 
   enableTransform = (drawEventPramas: DrawEventPramas, node: any) => {
-    const {stage, layer} = drawEventPramas
+    const { stage, layer } = drawEventPramas
 
     if (!this.transformer) {
       this.transformer = new Konva.Transformer({ ...transformerStyle, rotateEnabled: true })
       layer.add(this.transformer)
       this.transformer.attachTo(node)
-      node.on('mouseenter', function() {
+      node.on('mouseenter', function () {
         stage.container().style.cursor = 'move'
       })
-      node.on('mouseleave', function() {
+      node.on('mouseleave', function () {
         stage.container().style.cursor = 'default'
       })
       stage.container().style.cursor = 'move'
@@ -45,7 +45,7 @@ export default class Arrow extends Plugin {
   }
 
   disableTransform = (drawEventPramas: DrawEventPramas, node: any, remove?: boolean) => {
-    const {stage, layer, historyStack} = drawEventPramas
+    const { stage, layer, historyStack } = drawEventPramas
 
     if (this.transformer) {
       this.transformer.remove()
@@ -71,7 +71,7 @@ export default class Arrow extends Plugin {
   }
 
   onEnter = (drawEventPramas: DrawEventPramas) => {
-    const {stage, layer} = drawEventPramas
+    const { stage, layer } = drawEventPramas
     const container = stage.container()
     container.tabIndex = 1 // make it focusable
     container.focus()
@@ -84,9 +84,9 @@ export default class Arrow extends Plugin {
   }
 
   onClick = (drawEventPramas: DrawEventPramas) => {
-    const {event} = drawEventPramas
+    const { event } = drawEventPramas
 
-    if (event.target.name && event.target.name() === 'arrow') {
+    if (event.target.name && event.target.name() === 'line') {
       // 之前没有选中节点或者在相同节点之间切换点击
       if (!this.selectedNode || this.selectedNode._id !== event.target._id) {
         this.selectedNode && this.disableTransform(drawEventPramas, this.selectedNode)
@@ -103,7 +103,7 @@ export default class Arrow extends Plugin {
   }
 
   onDraw = (drawEventPramas: DrawEventPramas) => {
-    const {stage, layer, paramValue, historyStack} = drawEventPramas
+    const { stage, layer, paramValue, historyStack } = drawEventPramas
 
     if (!this.isPaint || this.transformer) return
 
@@ -111,9 +111,9 @@ export default class Arrow extends Plugin {
       const pos = PointUtil.getPointPos(stage);
       this.startPoints = [pos.x, pos.y]
       const strokeColor = (paramValue && paramValue.color) ? paramValue.color : this.defalutParamValue.color
-      this.lastArrow = new Konva.Arrow({
+      this.lastLine = new Konva.Line({
         id: uuid(),
-        name: 'arrow',
+        name: 'line',
         stroke: strokeColor,
         strokeWidth: (paramValue && paramValue.strokeWidth) ? paramValue.strokeWidth : this.defalutParamValue.strokeWidth,
         globalCompositeOperation: 'source-over',
@@ -123,28 +123,28 @@ export default class Arrow extends Plugin {
         fill: strokeColor,
         strokeScaleEnabled: false,
       })
-      this.lastArrow.on('transformend', function() {
+      this.lastLine.on('transformend', function () {
         historyStack.push(this.toObject())
       })
-      this.lastArrow.on('dragend', function() {
+      this.lastLine.on('dragend', function () {
         historyStack.push(this.toObject())
       })
-      layer.add(this.lastArrow)
+      layer.add(this.lastLine)
       this.started = true
     }
 
     const pos = PointUtil.getPointPos(stage);
-    this.lastArrow.points([this.startPoints[0], this.startPoints[1], pos.x, pos.y])
+    this.lastLine.points([this.startPoints[0], this.startPoints[1], pos.x, pos.y])
     layer.batchDraw()
   }
 
   onDrawEnd = (drawEventPramas: DrawEventPramas) => {
-    const {historyStack} = drawEventPramas
+    const { historyStack } = drawEventPramas
     // mouseup event is triggered by move event but click event
     if (this.started) {
       this.disableTransform(drawEventPramas, this.selectedNode)
-      if (this.lastArrow) {
-        historyStack.push(this.lastArrow.toObject())
+      if (this.lastLine) {
+        historyStack.push(this.lastLine.toObject())
       }
     }
     this.isPaint = false
@@ -158,11 +158,11 @@ export default class Arrow extends Plugin {
   }
 
   onNodeRecreate = (drawEventPramas: DrawEventPramas, node: any) => {
-    const {historyStack} = drawEventPramas
-    node.on('transformend', function() {
+    const { historyStack } = drawEventPramas
+    node.on('transformend', function () {
       historyStack.push(this.toObject())
     })
-    node.on('dragend', function() {
+    node.on('dragend', function () {
       historyStack.push(this.toObject())
     })
   }

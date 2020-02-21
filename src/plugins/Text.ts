@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventPramas, PluginParamValue, PluginParamName } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Text extends Plugin {
   name = 'text'
@@ -10,7 +11,7 @@ export default class Text extends Plugin {
   title = '插入文字'
   params = ['fontSize', 'color'] as PluginParamName[]
   defalutParamValue = {
-    fontSize: 12,
+    fontSize: 14,
     color: '#F5222D',
   } as PluginParamValue
   shapeName = 'text'
@@ -47,16 +48,19 @@ export default class Text extends Plugin {
 
   createTextarea = (stage: any, layer: any, transformer: any, textNode: any, historyStack: any) => {
     const textarea = document.createElement('textarea')
+    const scale = stage.getScale();
     textarea.value = textNode.text()
     textarea.style.position = 'absolute'
-    textarea.style.left = textNode.x() + 'px'
-    textarea.style.top = textNode.y() + 'px'
-    textarea.style.width = textNode.width() + 'px'
-    textarea.style.height = textNode.height() + 'px'
+    textarea.style.left = (textNode.x()*scale.x) + 'px'
+    textarea.style.top = (textNode.y()*scale.y) + 'px'
+    textarea.style.width = "100%";
+    textarea.style.overflow="auto";
+    textarea.style.wordBreak="break-all";
+    textarea.style.height = (textNode.height()*scale.y) + 'px'
     textarea.style.lineHeight = String(textNode.lineHeight())
     textarea.style.padding = textNode.padding() + 'px'
     textarea.style.margin = '0px'
-    textarea.style.fontSize = textNode.fontSize() + 'px'
+    textarea.style.fontSize = (textNode.fontSize()*scale.x) + 'px'
     textarea.style.color = textNode.fill()
     textarea.style.fontFamily = textNode.fontFamily()
     textarea.style.border = 'none'
@@ -66,12 +70,11 @@ export default class Text extends Plugin {
     textarea.style.resize = 'none'
     textarea.style.zIndex = '1000'
     textarea.style.boxSizing = 'content-box'
-
     textarea.addEventListener('keyup', (e: any) => {
       textNode.text(e.target.value)
       layer.draw()
-      textarea.style.width = textNode.width() + 'px'
-      textarea.style.height = textNode.height() + 'px'
+      // textarea.style.width = ((textNode.width())*scale.x) + 'px'
+      textarea.style.height = (textNode.height()*scale.y) + 'px'
     })
 
     textarea.addEventListener('blur', () => {
@@ -172,7 +175,7 @@ export default class Text extends Plugin {
 
     const fontSize = (paramValue && paramValue.fontSize) ? paramValue.fontSize : this.defalutParamValue.fontSize
     const color = (paramValue && paramValue.color) ? paramValue.color : this.defalutParamValue.color
-    const startPos = stage.getPointerPosition()
+    const startPos = PointUtil.getPointPos(stage);
     const textNode = new Konva.Text({
       id: uuid(),
       name: 'text',

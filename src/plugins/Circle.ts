@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventPramas, PluginParamName, PluginParamValue } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Circle extends Plugin {
   name = 'circle'
@@ -107,7 +108,7 @@ export default class Circle extends Plugin {
     if (!this.isPaint || this.transformer) return
 
     if (!this.started) {
-      const pos = stage.getPointerPosition()
+      const pos = PointUtil.getPointPos(stage);
       this.startPoint = [pos.x, pos.y]
       this.lastCircle = new Konva.Circle({
         id: uuid(),
@@ -130,7 +131,7 @@ export default class Circle extends Plugin {
       this.started = true
     }
 
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
     const radius = Math.sqrt(Math.pow(pos.x - this.startPoint[0], 2) + Math.pow(pos.y - this.startPoint[1], 2)) / 2
     this.lastCircle.x((pos.x + this.startPoint[0]) / 2)
     this.lastCircle.y((pos.y + this.startPoint[1]) / 2)

@@ -4,7 +4,6 @@ import Palette from './components/Palette'
 import React, { useEffect, useState } from 'react'
 import Toolbar from './components/Toolbar'
 import { PluginParamValue } from './type'
-
 interface ReactImageEditorProps {
   width?: number;
   height?: number;
@@ -16,6 +15,7 @@ interface ReactImageEditorProps {
   src: string;
   getStage?: (stage: any) => void;
   defaultPluginName?: string;
+  stageEvents?: string[];//启用默认的几个stage事件
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
@@ -34,7 +34,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
   const plugins = [...pluginFactory.plugins, ...props.plugins!]
   let defaultPlugin = null
   let defalutParamValue = {}
-  for(let i = 0; i < plugins.length; i++) {
+  for (let i = 0; i < plugins.length; i++) {
     if (props.defaultPluginName && props.toolbar && plugins[i].name === props.defaultPluginName) {
       defaultPlugin = plugins[i]
 
@@ -50,12 +50,16 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
   const [currentPluginParamValue, setCurrentPluginParamValue] = useState<PluginParamValue>(defalutParamValue)
 
   function handlePluginChange(plugin: Plugin) {
-    setCurrentPlugin(plugin)
-    plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue)
-    if (!plugin.params) {
-      setTimeout(() => {
-        setCurrentPlugin(null)
-      })
+    if (currentPlugin && plugin.name === currentPlugin.name) {
+      setCurrentPlugin(null);
+    } else {
+      setCurrentPlugin(plugin)
+      plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue)
+      if (!plugin.params) {
+        setTimeout(() => {
+          setCurrentPlugin(null)
+        })
+      }
     }
   }
 
@@ -73,7 +77,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     <div className="react-img-editor" style={style}>
       {
         imageObj ? (
-          <>
+          <div className="offset-bound">
             <Palette
               width={props.width!}
               height={props.height! - 42}
@@ -83,6 +87,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               currentPluginParamValue={currentPluginParamValue}
               getStage={props.getStage}
               handlePluginChange={handlePluginChange}
+              stageEvents={props.stageEvents}
             />
             <Toolbar width={props.width!}
               plugins={plugins!}
@@ -92,10 +97,10 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               handlePluginChange={handlePluginChange}
               handlePluginParamValueChange={handlePluginParamValueChange}
             />
-          </>
+          </div>
         ) : null
       }
-    </div>
+    </div >
   )
 }
 
@@ -104,7 +109,8 @@ ReactImageEditor.defaultProps = {
   height: 500,
   style: {},
   plugins: [],
+  stageEvents: [],
   toolbar: {
-    items: ['pen', 'eraser', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop'],
+    items: ['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout'],
   },
 } as Partial<ReactImageEditorProps>
