@@ -1,5 +1,4 @@
 import Plugin from './Plugin';
-import Konva from "konva";
 import { DrawEventPramas } from '../type';
 import PointUtil from '../tools/PointUtil';
 export default class Rotate extends Plugin {
@@ -7,7 +6,7 @@ export default class Rotate extends Plugin {
     iconfont = 'iconfont icon-rotate';
     title = '旋转';
 
-    rotate(child, x, y, scale) {
+    rotate(child: any, x: number, y: number, scale: { x: number, y: number }) {
         // 回0位
         child.setPosition({ x: 0, y: 0 });
         child.setOffset({ x: 0, y: 0 });
@@ -26,20 +25,20 @@ export default class Rotate extends Plugin {
     }
 
     onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { layer, historyStack, plugins, imageLayer, stage, dragNode } = drawEventPramas;
+        const { layer, imageLayer, stage, dragNode } = drawEventPramas;
         const { height, width } = stage.size();
         const pos = PointUtil.getCenterPos(dragNode, stage);
         const scale = stage.scale();
         stage.setSize({ width: height, height: width });
         const childs = imageLayer.getChildren();
-        childs.map(child => this.rotate(child, height, width, scale));
+        childs.map((child: any) => this.rotate(child, height, width, scale));
         const otherchilds = layer.getChildren();
-        otherchilds.map(child => this.rotate(child, height, width, scale));
+        otherchilds.map((child: any) => this.rotate(child, height, width, scale));
         imageLayer.draw();
         layer.draw();
         const newPos = PointUtil.getCenterPos(dragNode, stage);
         dragNode.resetPos({
-            x: newPos.x -pos.x,
+            x: newPos.x - pos.x,
             y: newPos.y - pos.y
         });
     }

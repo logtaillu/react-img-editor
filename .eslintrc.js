@@ -42,6 +42,7 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 0,
     '@typescript-eslint/ban-ts-ignore': 0,
     '@typescript-eslint/interface-name-prefix': 0,
+    "@typescript-eslint/no-implicit-any": 1
   },
   overrides: [
     {

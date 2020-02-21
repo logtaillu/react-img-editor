@@ -87,7 +87,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               currentPluginParamValue={currentPluginParamValue}
               getStage={props.getStage}
               handlePluginChange={handlePluginChange}
-              stageEvents={props.stageEvents}
+              stageEvents={props.stageEvents || []}
             />
             <Toolbar width={props.width!}
               plugins={plugins!}

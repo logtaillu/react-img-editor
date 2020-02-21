@@ -1,5 +1,4 @@
 import Plugin from './Plugin';
-import Konva from "konva";
 import { DrawEventPramas } from '../type';
 import { ZOOM_RATE } from "../constants";
 import PointUtil from '../tools/PointUtil';
@@ -9,7 +8,7 @@ export default class Zoomout extends Plugin {
     title = '放大';
 
     onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { layer, historyStack, plugins, imageLayer, stage, dragNode } = drawEventPramas;
+        const { stage, dragNode } = drawEventPramas;
         const oldscale = stage.scaleX();
         const pos = PointUtil.getCenterPos(dragNode, stage);
         const newscale = oldscale * ZOOM_RATE;

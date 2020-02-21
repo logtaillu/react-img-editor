@@ -1,5 +1,6 @@
+import DragWrapper from "../components/DragWrapper";
 export default {
-    getPointPos(stage) {
+    getPointPos(stage: any) {
         const pos = stage.getPointerPosition();
         const scale = stage.getScale();
         const pointPos = {
@@ -8,7 +9,7 @@ export default {
         };
         return pointPos;
     },
-    getCenterPos(dragNode, stage) {
+    getCenterPos(dragNode: DragWrapper, stage: any) {
         const bounds = dragNode.getBounds(dragNode.dragref);
         // 中点位置
         const pos = {

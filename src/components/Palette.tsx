@@ -5,9 +5,6 @@ import { PluginParamValue, DrawEventPramas } from '../type'
 import { prefixCls } from '../constants'
 import { uuid } from '../utils'
 import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
-import Draggable from 'react-draggable';
-import { innerWidth, innerHeight, outerWidth, outerHeight } from "react-draggable/build/utils/domFns";
-import { isNum, int } from 'react-draggable/build/utils/shims';
 import DragWrapper from './DragWrapper'
 interface PaletteProps {
   width: number;
@@ -56,7 +53,7 @@ export default function Palette(props: PaletteProps) {
     (props.stageEvents || []).map(eventname => {
       if (defaultStageEvents[eventname]) {
         const curevent = defaultStageEvents[eventname];
-        stageRef.current.on(curevent.eventName, e => curevent.handle(getDrawEventPramas(e), e));
+        stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
       }
     });
     props.getStage && props.getStage(stageRef.current)

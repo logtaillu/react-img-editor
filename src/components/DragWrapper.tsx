@@ -1,9 +1,8 @@
 import React from "react";
 import Draggable from 'react-draggable';
-import { innerWidth, innerHeight, outerWidth, outerHeight } from "react-draggable/build/utils/domFns";
-import { isNum, int } from 'react-draggable/build/utils/shims';
+import { isNum, int, innerWidth, innerHeight, outerWidth, outerHeight } from "../tools/HelperUitl";
 export default class DragWrapper extends React.Component<any, any>{
-    constructor(props) {
+    constructor(props: any) {
         super(props);
         this.state = {
             x: 0,
@@ -11,14 +10,14 @@ export default class DragWrapper extends React.Component<any, any>{
         };
     }
 
-    resetPos(pos) {
+    resetPos(pos: { x?: number, y?: number }) {
         this.setState({
             x: this.state.x + (pos.x || 0),
             y: this.state.y + (pos.y || 0)
         });
     }
 
-    getBounds(node) {
+    getBounds(node: any) {
         const { ownerDocument } = node;
         const parent = node.parentNode;
         const ownerWindow = ownerDocument.defaultView;
@@ -35,12 +34,12 @@ export default class DragWrapper extends React.Component<any, any>{
         return parentBounds;
     }
 
-    dragMove(e, data): void | false {
+    dragMove(e: any, data: any): void | false {
         // 参照react-draggable获取父元素边界
-        const { x, y, node, lastX, lastY } = data; // 当前位置
+        const { x, y, node } = data; // 当前位置
         const parentBounds = this.getBounds(node);
         // 该边界是否在parent内[可能有right>left的情形]
-        const getNewPos = (val, boda, bodb) => {
+        const getNewPos = (val: number, boda: number, bodb: number) => {
             if (isNum(boda) && isNum(bodb)) {
                 const min = Math.min(boda, bodb);
                 const max = Math.max(boda, bodb);
@@ -61,7 +60,7 @@ export default class DragWrapper extends React.Component<any, any>{
         const dragcls = this.props.disabled ? "nodarg" : "candrag";
         return (
             <Draggable onDrag={this.dragMove.bind(this)} disabled={this.props.disabled} position={{ x, y }}>
-                <div className={`react-img-editor-dragbox ${dragcls}`} ref={c => this.dragref = c}>
+                <div className={`react-img-editor-dragbox ${dragcls}`} ref={(c: any) => this.dragref = c}>
                     {this.props.children}
                 </div>
             </Draggable>
