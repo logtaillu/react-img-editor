@@ -292,19 +292,19 @@ function Example() {
   }
 
   const image1 = <span class="hljs-string">'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'</span>
-  // const image2 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'</span>
+  const image2 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'</span>
   // const image3 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'</span>
   // const image4 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'</span>
 
   return (
     &lt;&gt;
       &lt;ReactImgEditor
-        src={image1}
-        width={736}
-        height={414}
+        src={image2}
         plugins={[]}
+        width={800}
         getStage={setStage}
-        defaultPluginName=<span class="hljs-string">"text"</span>
+        defaultPluginName=<span class="hljs-string">""</span>
+        stageEvents={[<span class="hljs-string">"zoomOnWheel"</span>]}
       /&gt;
       &lt;div style={{ marginTop: <span class="hljs-string">'50px'</span> }}&gt;
         &lt;button onClick={downloadImage}&gt;download&lt;/button&gt;

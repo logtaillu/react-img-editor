@@ -4194,8 +4194,8 @@ var BaseLayer = (function (_super) {
         var stage = this.getStage();
         if (stage) {
             stage.content.removeChild(this.getCanvas()._canvas);
-            if (index < stage.getChildren().length - 1) {
-                stage.content.insertBefore(this.getCanvas()._canvas, stage.getChildren()[index + 1].getCanvas()._canvas);
+            if (index < stage.children.length - 1) {
+                stage.content.insertBefore(this.getCanvas()._canvas, stage.children[index + 1].getCanvas()._canvas);
             }
             else {
                 stage.content.appendChild(this.getCanvas()._canvas);
@@ -4222,8 +4222,8 @@ var BaseLayer = (function (_super) {
             return false;
         }
         stage.content.removeChild(this.getCanvas()._canvas);
-        if (this.index < stage.getChildren().length - 1) {
-            stage.content.insertBefore(this.getCanvas()._canvas, stage.getChildren()[this.index + 1].getCanvas()._canvas);
+        if (this.index < stage.children.length - 1) {
+            stage.content.insertBefore(this.getCanvas()._canvas, stage.children[this.index + 1].getCanvas()._canvas);
         }
         else {
             stage.content.appendChild(this.getCanvas()._canvas);
@@ -4234,7 +4234,7 @@ var BaseLayer = (function (_super) {
         if (Node_1.Node.prototype.moveDown.call(this)) {
             var stage = this.getStage();
             if (stage) {
-                var children = stage.getChildren();
+                var children = stage.children;
                 stage.content.removeChild(this.getCanvas()._canvas);
                 stage.content.insertBefore(this.getCanvas()._canvas, children[this.index + 1].getCanvas()._canvas);
             }
@@ -4246,7 +4246,7 @@ var BaseLayer = (function (_super) {
         if (Node_1.Node.prototype.moveToBottom.call(this)) {
             var stage = this.getStage();
             if (stage) {
-                var children = stage.getChildren();
+                var children = stage.children;
                 stage.content.removeChild(this.getCanvas()._canvas);
                 stage.content.insertBefore(this.getCanvas()._canvas, children[1].getCanvas()._canvas);
             }
@@ -4569,13 +4569,14 @@ var Container = (function (_super) {
             }
             return this;
         }
-        var child = arguments[0];
+        var child = children[0];
         if (child.getParent()) {
             child.moveTo(this);
             return this;
         }
         var _children = this.children;
         this._validateAdd(child);
+        child._clearCaches();
         child.index = _children.length;
         child.parent = this;
         _children.push(child);
@@ -4945,26 +4946,22 @@ var Context = (function () {
         }
     }
     Context.prototype.fillShape = function (shape) {
-        if (shape.getFillEnabled()) {
+        if (shape.fillEnabled()) {
             this._fill(shape);
         }
     };
     Context.prototype._fill = function (shape) {
     };
     Context.prototype.strokeShape = function (shape) {
-        if (shape.getStrokeEnabled()) {
+        if (shape.hasStroke()) {
             this._stroke(shape);
         }
     };
     Context.prototype._stroke = function (shape) {
     };
     Context.prototype.fillStrokeShape = function (shape) {
-        if (shape.getFillEnabled()) {
-            this._fill(shape);
-        }
-        if (shape.getStrokeEnabled()) {
-            this._stroke(shape);
-        }
+        this.fillShape(shape);
+        this.strokeShape(shape);
     };
     Context.prototype.getTrace = function (relaxed) {
         var traceArr = this.traceArr, len = traceArr.length, str = '', n, trace, method, args;
@@ -5364,6 +5361,11 @@ var HitContext = (function (_super) {
         shape._fillFuncHit(this);
         this.restore();
     };
+    HitContext.prototype.strokeShape = function (shape) {
+        if (shape.hasHitStroke()) {
+            this._stroke(shape);
+        }
+    };
     HitContext.prototype._stroke = function (shape) {
         if (shape.hasHitStroke()) {
             var strokeScaleEnabled = shape.getStrokeScaleEnabled();
@@ -5757,7 +5759,7 @@ exports.glob = typeof global !== 'undefined'
             : {};
 exports.Konva = {
     _global: exports.glob,
-    version: '4.1.2',
+    version: '4.1.5',
     isBrowser: detectBrowser(),
     isUnminified: /param/.test(function (param) { }.toString()),
     dblClickWindow: 400,
@@ -6413,12 +6415,16 @@ var Node = (function () {
         this._remove();
         return this;
     };
-    Node.prototype._remove = function () {
-        this._clearSelfAndDescendantCache(STAGE);
+    Node.prototype._clearCaches = function () {
         this._clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+        this._clearSelfAndDescendantCache(ABSOLUTE_OPACITY);
+        this._clearSelfAndDescendantCache(ABSOLUTE_SCALE);
+        this._clearSelfAndDescendantCache(STAGE);
         this._clearSelfAndDescendantCache(VISIBLE);
         this._clearSelfAndDescendantCache(LISTENING);
-        this._clearSelfAndDescendantCache(ABSOLUTE_OPACITY);
+    };
+    Node.prototype._remove = function () {
+        this._clearCaches();
         var parent = this.getParent();
         if (parent && parent.children) {
             parent.children.splice(this.index, 1);
@@ -6935,6 +6941,15 @@ var Node = (function () {
             x: scaleX,
             y: scaleY
         };
+    };
+    Node.prototype.getAbsoluteRotation = function () {
+        var parent = this;
+        var rotation = 0;
+        while (parent) {
+            rotation += parent.rotation();
+            parent = parent.getParent();
+        }
+        return rotation;
     };
     Node.prototype.getTransform = function () {
         return this._getCache(TRANSFORM, this._getTransform);
@@ -7640,7 +7655,7 @@ var Shape = (function (_super) {
         }
     };
     Shape.prototype.hasFill = function () {
-        return !!(this.fill() ||
+        return this.fillEnabled() && !!(this.fill() ||
             this.fillPatternImage() ||
             this.fillLinearGradientColorStops() ||
             this.fillRadialGradientColorStops());
@@ -12931,7 +12946,7 @@ var Line = (function (_super) {
                 points[1]
             ], this._getTensionPoints(), [
                 points[points.length - 2],
-                points[points.length - 2]
+                points[points.length - 1]
             ]);
         }
         else {
@@ -13062,12 +13077,31 @@ var Path = (function (_super) {
         var points = [];
         this.dataArray.forEach(function (data) {
             if (data.command === 'A') {
-                points = points.concat([
-                    data.points[0] - data.points[2],
-                    data.points[1] - data.points[3],
-                    data.points[0] + data.points[2],
-                    data.points[1] + data.points[3]
-                ]);
+                var start = data.points[4];
+                var dTheta = data.points[5];
+                var end = data.points[4] + dTheta;
+                var inc = Math.PI / 180.0;
+                if (Math.abs(start - end) < inc) {
+                    inc = Math.abs(start - end);
+                }
+                if (dTheta < 0) {
+                    for (var t = start - inc; t > end; t -= inc) {
+                        var point = Path.getPointOnEllipticalArc(data.points[0], data.points[1], data.points[2], data.points[3], t, 0);
+                        points.push(point.x, point.y);
+                    }
+                }
+                else {
+                    for (var t = start + inc; t < end; t += inc) {
+                        var point = Path.getPointOnEllipticalArc(data.points[0], data.points[1], data.points[2], data.points[3], t, 0);
+                        points.push(point.x, point.y);
+                    }
+                }
+            }
+            else if (data.command === 'C') {
+                for (var t = 0.0; t <= 1; t += 0.01) {
+                    var point = Path.getPointOnCubicBezier(t, data.start.x, data.start.y, data.points[0], data.points[1], data.points[2], data.points[3], data.points[4], data.points[5]);
+                    points.push(point.x, point.y);
+                }
             }
             else {
                 points = points.concat(data.points);
@@ -15035,7 +15069,7 @@ var Transformer = (function (_super) {
             e.cancelBubble = true;
         });
         anchor.on('mouseenter', function () {
-            var rad = Global_1.Konva.getAngle(_this.rotation());
+            var rad = Global_1.Konva.getAngle(_this.getAbsoluteRotation());
             var scale = _this.getNode().getAbsoluteScale();
             var isMirrored = scale.y * scale.x < 0;
             var cursor = getCursor(name, rad, isMirrored);
@@ -15091,20 +15125,8 @@ var Transformer = (function (_super) {
         var x, y, newHypotenuse;
         var anchorNode = this.findOne('.' + this._movingAnchorName);
         var stage = anchorNode.getStage();
-        var box = stage.getContent().getBoundingClientRect();
-        var zeroPoint = {
-            x: box.left,
-            y: box.top
-        };
-        var pointerPos = {
-            left: e.clientX !== undefined ? e.clientX : e.touches[0].clientX,
-            top: e.clientX !== undefined ? e.clientY : e.touches[0].clientY
-        };
-        var newAbsPos = {
-            x: pointerPos.left - zeroPoint.x,
-            y: pointerPos.top - zeroPoint.y
-        };
-        anchorNode.setAbsolutePosition(newAbsPos);
+        stage.setPointersPositions(e);
+        anchorNode.setAbsolutePosition(stage.getPointerPosition());
         var keepProportion = this.keepRatio() || e.shiftKey;
         var padding = this.padding();
         if (this._movingAnchorName === 'top-left') {
@@ -47278,6 +47300,529 @@ if (false) {} else {
 
 /***/ }),
 
+/***/ "./node_modules/react-draggable/build/utils/domFns.js":
+/*!************************************************************!*\
+  !*** ./node_modules/react-draggable/build/utils/domFns.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.matchesSelector = matchesSelector;
+exports.matchesSelectorAndParentsTo = matchesSelectorAndParentsTo;
+exports.addEvent = addEvent;
+exports.removeEvent = removeEvent;
+exports.outerHeight = outerHeight;
+exports.outerWidth = outerWidth;
+exports.innerHeight = innerHeight;
+exports.innerWidth = innerWidth;
+exports.offsetXYFromParent = offsetXYFromParent;
+exports.createCSSTransform = createCSSTransform;
+exports.createSVGTransform = createSVGTransform;
+exports.getTranslation = getTranslation;
+exports.getTouch = getTouch;
+exports.getTouchIdentifier = getTouchIdentifier;
+exports.addUserSelectStyles = addUserSelectStyles;
+exports.removeUserSelectStyles = removeUserSelectStyles;
+exports.styleHacks = styleHacks;
+exports.addClassName = addClassName;
+exports.removeClassName = removeClassName;
+
+var _shims = __webpack_require__(/*! ./shims */ "./node_modules/react-draggable/build/utils/shims.js");
+
+var _getPrefix = _interopRequireWildcard(__webpack_require__(/*! ./getPrefix */ "./node_modules/react-draggable/build/utils/getPrefix.js"));
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
+let matchesSelectorFunc = '';
+
+function matchesSelector(el
+/*: Node*/
+, selector
+/*: string*/
+)
+/*: boolean*/
+{
+  if (!matchesSelectorFunc) {
+    matchesSelectorFunc = (0, _shims.findInArray)(['matches', 'webkitMatchesSelector', 'mozMatchesSelector', 'msMatchesSelector', 'oMatchesSelector'], function (method) {
+      // $FlowIgnore: Doesn't think elements are indexable
+      return (0, _shims.isFunction)(el[method]);
+    });
+  } // Might not be found entirely (not an Element?) - in that case, bail
+  // $FlowIgnore: Doesn't think elements are indexable
+
+
+  if (!(0, _shims.isFunction)(el[matchesSelectorFunc])) return false; // $FlowIgnore: Doesn't think elements are indexable
+
+  return el[matchesSelectorFunc](selector);
+} // Works up the tree to the draggable itself attempting to match selector.
+
+
+function matchesSelectorAndParentsTo(el
+/*: Node*/
+, selector
+/*: string*/
+, baseNode
+/*: Node*/
+)
+/*: boolean*/
+{
+  let node = el;
+
+  do {
+    if (matchesSelector(node, selector)) return true;
+    if (node === baseNode) return false;
+    node = node.parentNode;
+  } while (node);
+
+  return false;
+}
+
+function addEvent(el
+/*: ?Node*/
+, event
+/*: string*/
+, handler
+/*: Function*/
+)
+/*: void*/
+{
+  if (!el) {
+    return;
+  }
+
+  if (el.attachEvent) {
+    el.attachEvent('on' + event, handler);
+  } else if (el.addEventListener) {
+    el.addEventListener(event, handler, true);
+  } else {
+    // $FlowIgnore: Doesn't think elements are indexable
+    el['on' + event] = handler;
+  }
+}
+
+function removeEvent(el
+/*: ?Node*/
+, event
+/*: string*/
+, handler
+/*: Function*/
+)
+/*: void*/
+{
+  if (!el) {
+    return;
+  }
+
+  if (el.detachEvent) {
+    el.detachEvent('on' + event, handler);
+  } else if (el.removeEventListener) {
+    el.removeEventListener(event, handler, true);
+  } else {
+    // $FlowIgnore: Doesn't think elements are indexable
+    el['on' + event] = null;
+  }
+}
+
+function outerHeight(node
+/*: HTMLElement*/
+)
+/*: number*/
+{
+  // This is deliberately excluding margin for our calculations, since we are using
+  // offsetTop which is including margin. See getBoundPosition
+  let height = node.clientHeight;
+  const computedStyle = node.ownerDocument.defaultView.getComputedStyle(node);
+  height += (0, _shims.int)(computedStyle.borderTopWidth);
+  height += (0, _shims.int)(computedStyle.borderBottomWidth);
+  return height;
+}
+
+function outerWidth(node
+/*: HTMLElement*/
+)
+/*: number*/
+{
+  // This is deliberately excluding margin for our calculations, since we are using
+  // offsetLeft which is including margin. See getBoundPosition
+  let width = node.clientWidth;
+  const computedStyle = node.ownerDocument.defaultView.getComputedStyle(node);
+  width += (0, _shims.int)(computedStyle.borderLeftWidth);
+  width += (0, _shims.int)(computedStyle.borderRightWidth);
+  return width;
+}
+
+function innerHeight(node
+/*: HTMLElement*/
+)
+/*: number*/
+{
+  let height = node.clientHeight;
+  const computedStyle = node.ownerDocument.defaultView.getComputedStyle(node);
+  height -= (0, _shims.int)(computedStyle.paddingTop);
+  height -= (0, _shims.int)(computedStyle.paddingBottom);
+  return height;
+}
+
+function innerWidth(node
+/*: HTMLElement*/
+)
+/*: number*/
+{
+  let width = node.clientWidth;
+  const computedStyle = node.ownerDocument.defaultView.getComputedStyle(node);
+  width -= (0, _shims.int)(computedStyle.paddingLeft);
+  width -= (0, _shims.int)(computedStyle.paddingRight);
+  return width;
+} // Get from offsetParent
+
+
+function offsetXYFromParent(evt
+/*: {clientX: number, clientY: number}*/
+, offsetParent
+/*: HTMLElement*/
+)
+/*: ControlPosition*/
+{
+  const isBody = offsetParent === offsetParent.ownerDocument.body;
+  const offsetParentRect = isBody ? {
+    left: 0,
+    top: 0
+  } : offsetParent.getBoundingClientRect();
+  const x = evt.clientX + offsetParent.scrollLeft - offsetParentRect.left;
+  const y = evt.clientY + offsetParent.scrollTop - offsetParentRect.top;
+  return {
+    x,
+    y
+  };
+}
+
+function createCSSTransform(controlPos
+/*: ControlPosition*/
+, positionOffset
+/*: PositionOffsetControlPosition*/
+)
+/*: Object*/
+{
+  const translation = getTranslation(controlPos, positionOffset, 'px');
+  return {
+    [(0, _getPrefix.browserPrefixToKey)('transform', _getPrefix.default)]: translation
+  };
+}
+
+function createSVGTransform(controlPos
+/*: ControlPosition*/
+, positionOffset
+/*: PositionOffsetControlPosition*/
+)
+/*: string*/
+{
+  const translation = getTranslation(controlPos, positionOffset, '');
+  return translation;
+}
+
+function getTranslation({
+  x,
+  y
+}
+/*: ControlPosition*/
+, positionOffset
+/*: PositionOffsetControlPosition*/
+, unitSuffix
+/*: string*/
+)
+/*: string*/
+{
+  let translation = `translate(${x}${unitSuffix},${y}${unitSuffix})`;
+
+  if (positionOffset) {
+    const defaultX = `${typeof positionOffset.x === 'string' ? positionOffset.x : positionOffset.x + unitSuffix}`;
+    const defaultY = `${typeof positionOffset.y === 'string' ? positionOffset.y : positionOffset.y + unitSuffix}`;
+    translation = `translate(${defaultX}, ${defaultY})` + translation;
+  }
+
+  return translation;
+}
+
+function getTouch(e
+/*: MouseTouchEvent*/
+, identifier
+/*: number*/
+)
+/*: ?{clientX: number, clientY: number}*/
+{
+  return e.targetTouches && (0, _shims.findInArray)(e.targetTouches, t => identifier === t.identifier) || e.changedTouches && (0, _shims.findInArray)(e.changedTouches, t => identifier === t.identifier);
+}
+
+function getTouchIdentifier(e
+/*: MouseTouchEvent*/
+)
+/*: ?number*/
+{
+  if (e.targetTouches && e.targetTouches[0]) return e.targetTouches[0].identifier;
+  if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].identifier;
+} // User-select Hacks:
+//
+// Useful for preventing blue highlights all over everything when dragging.
+// Note we're passing `document` b/c we could be iframed
+
+
+function addUserSelectStyles(doc
+/*: ?Document*/
+) {
+  if (!doc) return;
+  let styleEl = doc.getElementById('react-draggable-style-el');
+
+  if (!styleEl) {
+    styleEl = doc.createElement('style');
+    styleEl.type = 'text/css';
+    styleEl.id = 'react-draggable-style-el';
+    styleEl.innerHTML = '.react-draggable-transparent-selection *::-moz-selection {all: inherit;}\n';
+    styleEl.innerHTML += '.react-draggable-transparent-selection *::selection {all: inherit;}\n';
+    doc.getElementsByTagName('head')[0].appendChild(styleEl);
+  }
+
+  if (doc.body) addClassName(doc.body, 'react-draggable-transparent-selection');
+}
+
+function removeUserSelectStyles(doc
+/*: ?Document*/
+) {
+  try {
+    if (doc && doc.body) removeClassName(doc.body, 'react-draggable-transparent-selection'); // $FlowIgnore: IE
+
+    if (doc.selection) {
+      // $FlowIgnore: IE
+      doc.selection.empty();
+    } else {
+      window.getSelection().removeAllRanges(); // remove selection caused by scroll
+    }
+  } catch (e) {// probably IE
+  }
+}
+
+function styleHacks(childStyle
+/*: Object*/
+= {})
+/*: Object*/
+{
+  // Workaround IE pointer events; see #51
+  // https://github.com/mzabriskie/react-draggable/issues/51#issuecomment-103488278
+  return {
+    touchAction: 'none',
+    ...childStyle
+  };
+}
+
+function addClassName(el
+/*: HTMLElement*/
+, className
+/*: string*/
+) {
+  if (el.classList) {
+    el.classList.add(className);
+  } else {
+    if (!el.className.match(new RegExp(`(?:^|\\s)${className}(?!\\S)`))) {
+      el.className += ` ${className}`;
+    }
+  }
+}
+
+function removeClassName(el
+/*: HTMLElement*/
+, className
+/*: string*/
+) {
+  if (el.classList) {
+    el.classList.remove(className);
+  } else {
+    el.className = el.className.replace(new RegExp(`(?:^|\\s)${className}(?!\\S)`, 'g'), '');
+  }
+}
+
+/***/ }),
+
+/***/ "./node_modules/react-draggable/build/utils/getPrefix.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/react-draggable/build/utils/getPrefix.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getPrefix = getPrefix;
+exports.browserPrefixToKey = browserPrefixToKey;
+exports.browserPrefixToStyle = browserPrefixToStyle;
+exports.default = void 0;
+const prefixes = ['Moz', 'Webkit', 'O', 'ms'];
+
+function getPrefix(prop
+/*: string*/
+= 'transform')
+/*: string*/
+{
+  // Checking specifically for 'window.document' is for pseudo-browser server-side
+  // environments that define 'window' as the global context.
+  // E.g. React-rails (see https://github.com/reactjs/react-rails/pull/84)
+  if (typeof window === 'undefined' || typeof window.document === 'undefined') return '';
+  const style = window.document.documentElement.style;
+  if (prop in style) return '';
+
+  for (let i = 0; i < prefixes.length; i++) {
+    if (browserPrefixToKey(prop, prefixes[i]) in style) return prefixes[i];
+  }
+
+  return '';
+}
+
+function browserPrefixToKey(prop
+/*: string*/
+, prefix
+/*: string*/
+)
+/*: string*/
+{
+  return prefix ? `${prefix}${kebabToTitleCase(prop)}` : prop;
+}
+
+function browserPrefixToStyle(prop
+/*: string*/
+, prefix
+/*: string*/
+)
+/*: string*/
+{
+  return prefix ? `-${prefix.toLowerCase()}-${prop}` : prop;
+}
+
+function kebabToTitleCase(str
+/*: string*/
+)
+/*: string*/
+{
+  let out = '';
+  let shouldCapitalize = true;
+
+  for (let i = 0; i < str.length; i++) {
+    if (shouldCapitalize) {
+      out += str[i].toUpperCase();
+      shouldCapitalize = false;
+    } else if (str[i] === '-') {
+      shouldCapitalize = true;
+    } else {
+      out += str[i];
+    }
+  }
+
+  return out;
+} // Default export is the prefix itself, like 'Moz', 'Webkit', etc
+// Note that you may have to re-test for certain things; for instance, Chrome 50
+// can handle unprefixed `transform`, but not unprefixed `user-select`
+
+
+var _default = getPrefix();
+
+exports.default = _default;
+
+/***/ }),
+
+/***/ "./node_modules/react-draggable/build/utils/shims.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/react-draggable/build/utils/shims.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.findInArray = findInArray;
+exports.isFunction = isFunction;
+exports.isNum = isNum;
+exports.int = int;
+exports.dontSetMe = dontSetMe;
+
+// @credits https://gist.github.com/rogozhnikoff/a43cfed27c41e4e68cdc
+function findInArray(array
+/*: Array<any> | TouchList*/
+, callback
+/*: Function*/
+)
+/*: any*/
+{
+  for (let i = 0, length = array.length; i < length; i++) {
+    if (callback.apply(callback, [array[i], i, array])) return array[i];
+  }
+}
+
+function isFunction(func
+/*: any*/
+)
+/*: boolean*/
+{
+  return typeof func === 'function' || Object.prototype.toString.call(func) === '[object Function]';
+}
+
+function isNum(num
+/*: any*/
+)
+/*: boolean*/
+{
+  return typeof num === 'number' && !isNaN(num);
+}
+
+function int(a
+/*: string*/
+)
+/*: number*/
+{
+  return parseInt(a, 10);
+}
+
+function dontSetMe(props
+/*: Object*/
+, propName
+/*: string*/
+, componentName
+/*: string*/
+) {
+  if (props[propName]) {
+    return new Error(`Invalid prop ${propName} passed to ${componentName} - do not set this, set it on the child.`);
+  }
+}
+
+/***/ }),
+
+/***/ "./node_modules/react-draggable/build/web/react-draggable.min.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/react-draggable/build/web/react-draggable.min.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+!function(t,e){ true?module.exports=e(__webpack_require__(/*! react */ "./node_modules/react/index.js"),__webpack_require__(/*! react-dom */ "./node_modules/react-dom/index.js")):undefined}(window,function(t,e){return function(t){var e={};function n(r){if(e[r])return e[r].exports;var o=e[r]={i:r,l:!1,exports:{}};return t[r].call(o.exports,o,o.exports,n),o.l=!0,o.exports}return n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var o in t)n.d(r,o,function(e){return t[e]}.bind(null,o));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,"a",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p="",n(n.s=4)}([function(t,e,n){t.exports=n(5)()},function(e,n){e.exports=t},function(t,n){t.exports=e},function(t,e,n){var r;
+/*!
+  Copyright (c) 2017 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/!function(){"use strict";var n={}.hasOwnProperty;function o(){for(var t=[],e=0;e<arguments.length;e++){var r=arguments[e];if(r){var a=typeof r;if("string"===a||"number"===a)t.push(r);else if(Array.isArray(r)&&r.length){var i=o.apply(null,r);i&&t.push(i)}else if("object"===a)for(var s in r)n.call(r,s)&&r[s]&&t.push(s)}}return t.join(" ")}t.exports?(o.default=o,t.exports=o):void 0===(r=function(){return o}.apply(e,[]))||(t.exports=r)}()},function(t,e,n){var r=n(7),o=r.default,a=r.DraggableCore;t.exports=o,t.exports.default=o,t.exports.DraggableCore=a},function(t,e,n){"use strict";var r=n(6);function o(){}function a(){}a.resetWarningCache=o,t.exports=function(){function t(t,e,n,o,a,i){if(i!==r){var s=new Error("Calling PropTypes validators directly is not supported by the `prop-types` package. Use PropTypes.checkPropTypes() to call them. Read more at http://fb.me/use-check-prop-types");throw s.name="Invariant Violation",s}}function e(){return t}t.isRequired=t;var n={array:t,bool:t,func:t,number:t,object:t,string:t,symbol:t,any:t,arrayOf:e,element:t,elementType:t,instanceOf:e,node:t,objectOf:e,oneOf:e,oneOfType:e,shape:e,exact:e,checkPropTypes:a,resetWarningCache:o};return n.PropTypes=n,n}},function(t,e,n){"use strict";t.exports="SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED"},function(t,e,n){"use strict";n.r(e);var r=n(1),o=n.n(r),a=n(0),i=n.n(a),s=n(2),u=n.n(s),c=n(3),l=n.n(c);function f(t,e){for(var n=0,r=t.length;n<r;n++)if(e.apply(e,[t[n],n,t]))return t[n]}function p(t){return"function"==typeof t||"[object Function]"===Object.prototype.toString.call(t)}function d(t){return"number"==typeof t&&!isNaN(t)}function g(t){return parseInt(t,10)}function y(t,e,n){if(t[e])return new Error("Invalid prop ".concat(e," passed to ").concat(n," - do not set this, set it on the child."))}var h=["Moz","Webkit","O","ms"];function b(t,e){return e?"".concat(e).concat(function(t){for(var e="",n=!0,r=0;r<t.length;r++)n?(e+=t[r].toUpperCase(),n=!1):"-"===t[r]?n=!0:e+=t[r];return e}(t)):t}var m=function(){var t=arguments.length>0&&void 0!==arguments[0]?arguments[0]:"transform";if("undefined"==typeof window||void 0===window.document)return"";var e=window.document.documentElement.style;if(t in e)return"";for(var n=0;n<h.length;n++)if(b(t,h[n])in e)return h[n];return""}();function v(t,e){var n=Object.keys(t);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(t);e&&(r=r.filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable})),n.push.apply(n,r)}return n}function w(t,e,n){return e in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}var O="";function S(t,e){return O||(O=f(["matches","webkitMatchesSelector","mozMatchesSelector","msMatchesSelector","oMatchesSelector"],function(e){return p(t[e])})),!!p(t[O])&&t[O](e)}function D(t,e,n){var r=t;do{if(S(r,e))return!0;if(r===n)return!1;r=r.parentNode}while(r);return!1}function x(t,e,n){t&&(t.attachEvent?t.attachEvent("on"+e,n):t.addEventListener?t.addEventListener(e,n,!0):t["on"+e]=n)}function P(t,e,n){t&&(t.detachEvent?t.detachEvent("on"+e,n):t.removeEventListener?t.removeEventListener(e,n,!0):t["on"+e]=null)}function j(t){var e=t.clientHeight,n=t.ownerDocument.defaultView.getComputedStyle(t);return e+=g(n.borderTopWidth),e+=g(n.borderBottomWidth)}function E(t){var e=t.clientWidth,n=t.ownerDocument.defaultView.getComputedStyle(t);return e+=g(n.borderLeftWidth),e+=g(n.borderRightWidth)}function T(t){var e=t.clientHeight,n=t.ownerDocument.defaultView.getComputedStyle(t);return e-=g(n.paddingTop),e-=g(n.paddingBottom)}function N(t){var e=t.clientWidth,n=t.ownerDocument.defaultView.getComputedStyle(t);return e-=g(n.paddingLeft),e-=g(n.paddingRight)}function C(t,e,n){var r=t.x,o=t.y,a="translate(".concat(r).concat(n,",").concat(o).concat(n,")");if(e){var i="".concat("string"==typeof e.x?e.x:e.x+n),s="".concat("string"==typeof e.y?e.y:e.y+n);a="translate(".concat(i,", ").concat(s,")")+a}return a}function M(t){if(t){var e,n,r=t.getElementById("react-draggable-style-el");r||((r=t.createElement("style")).type="text/css",r.id="react-draggable-style-el",r.innerHTML=".react-draggable-transparent-selection *::-moz-selection {all: inherit;}\n",r.innerHTML+=".react-draggable-transparent-selection *::selection {all: inherit;}\n",t.getElementsByTagName("head")[0].appendChild(r)),t.body&&(e=t.body,n="react-draggable-transparent-selection",e.classList?e.classList.add(n):e.className.match(new RegExp("(?:^|\\s)".concat(n,"(?!\\S)")))||(e.className+=" ".concat(n)))}}function k(t){try{t&&t.body&&(e=t.body,n="react-draggable-transparent-selection",e.classList?e.classList.remove(n):e.className=e.className.replace(new RegExp("(?:^|\\s)".concat(n,"(?!\\S)"),"g"),"")),t.selection?t.selection.empty():window.getSelection().removeAllRanges()}catch(t){}var e,n}function _(){return function(t){for(var e=1;e<arguments.length;e++){var n=null!=arguments[e]?arguments[e]:{};e%2?v(n,!0).forEach(function(e){w(t,e,n[e])}):Object.getOwnPropertyDescriptors?Object.defineProperties(t,Object.getOwnPropertyDescriptors(n)):v(n).forEach(function(e){Object.defineProperty(t,e,Object.getOwnPropertyDescriptor(n,e))})}return t}({touchAction:"none"},arguments.length>0&&void 0!==arguments[0]?arguments[0]:{})}function X(t){return"both"===t.props.axis||"x"===t.props.axis}function Y(t){return"both"===t.props.axis||"y"===t.props.axis}function L(t,e,n){var r="number"==typeof e?function(t,e){return t.targetTouches&&f(t.targetTouches,function(t){return e===t.identifier})||t.changedTouches&&f(t.changedTouches,function(t){return e===t.identifier})}(t,e):null;if("number"==typeof e&&!r)return null;var o=I(n);return function(t,e,n){var r=e===e.ownerDocument.body?{left:0,top:0}:e.getBoundingClientRect();return{x:(t.clientX+e.scrollLeft-r.left)/n,y:(t.clientY+e.scrollTop-r.top)/n}}(r||t,n.props.offsetParent||o.offsetParent||o.ownerDocument.body,n.props.scale)}function R(t,e,n){var r=t.state,o=!d(r.lastX),a=I(t);return o?{node:a,deltaX:0,deltaY:0,lastX:e,lastY:n,x:e,y:n}:{node:a,deltaX:e-r.lastX,deltaY:n-r.lastY,lastX:r.lastX,lastY:r.lastY,x:e,y:n}}function A(t,e){var n=t.props.scale;return{node:e.node,x:t.state.x+e.deltaX/n,y:t.state.y+e.deltaY/n,deltaX:e.deltaX/n,deltaY:e.deltaY/n,lastX:t.state.x,lastY:t.state.y}}function I(t){var e=u.a.findDOMNode(t);if(!e)throw new Error("<DraggableCore>: Unmounted during event!");return e}function U(t){return(U="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t})(t)}function V(t,e){return function(t){if(Array.isArray(t))return t}(t)||function(t,e){var n=[],r=!0,o=!1,a=void 0;try{for(var i,s=t[Symbol.iterator]();!(r=(i=s.next()).done)&&(n.push(i.value),!e||n.length!==e);r=!0);}catch(t){o=!0,a=t}finally{try{r||null==s.return||s.return()}finally{if(o)throw a}}return n}(t,e)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance")}()}function W(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}function B(t){return(B=Object.setPrototypeOf?Object.getPrototypeOf:function(t){return t.__proto__||Object.getPrototypeOf(t)})(t)}function H(t){if(void 0===t)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return t}function q(t,e){return(q=Object.setPrototypeOf||function(t,e){return t.__proto__=e,t})(t,e)}function G(t,e,n){return e in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}var z={touch:{start:"touchstart",move:"touchmove",stop:"touchend"},mouse:{start:"mousedown",move:"mousemove",stop:"mouseup"}},F=z.mouse,J=function(t){function e(){var t,n,r,o;!function(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}(this,e);for(var a=arguments.length,i=new Array(a),s=0;s<a;s++)i[s]=arguments[s];return r=this,o=(t=B(e)).call.apply(t,[this].concat(i)),n=!o||"object"!==U(o)&&"function"!=typeof o?H(r):o,G(H(n),"state",{dragging:!1,lastX:NaN,lastY:NaN,touchIdentifier:null}),G(H(n),"handleDragStart",function(t){if(n.props.onMouseDown(t),!n.props.allowAnyClick&&"number"==typeof t.button&&0!==t.button)return!1;var e=u.a.findDOMNode(H(n));if(!e||!e.ownerDocument||!e.ownerDocument.body)throw new Error("<DraggableCore> not mounted on DragStart!");var r=e.ownerDocument;if(!(n.props.disabled||!(t.target instanceof r.defaultView.Node)||n.props.handle&&!D(t.target,n.props.handle,e)||n.props.cancel&&D(t.target,n.props.cancel,e))){var o=function(t){return t.targetTouches&&t.targetTouches[0]?t.targetTouches[0].identifier:t.changedTouches&&t.changedTouches[0]?t.changedTouches[0].identifier:void 0}(t);n.setState({touchIdentifier:o});var a=L(t,o,H(n));if(null!=a){var i=a.x,s=a.y,c=R(H(n),i,s);n.props.onStart,!1!==n.props.onStart(t,c)&&(n.props.enableUserSelectHack&&M(r),n.setState({dragging:!0,lastX:i,lastY:s}),x(r,F.move,n.handleDrag),x(r,F.stop,n.handleDragStop))}}}),G(H(n),"handleDrag",function(t){"touchmove"===t.type&&t.preventDefault();var e=L(t,n.state.touchIdentifier,H(n));if(null!=e){var r,o,a,i=e.x,s=e.y;if(Array.isArray(n.props.grid)){var u=i-n.state.lastX,c=s-n.state.lastY,l=V((r=n.props.grid,o=u,a=c,[Math.round(o/r[0])*r[0],Math.round(a/r[1])*r[1]]),2);if(u=l[0],c=l[1],!u&&!c)return;i=n.state.lastX+u,s=n.state.lastY+c}var f=R(H(n),i,s);if(!1!==n.props.onDrag(t,f))n.setState({lastX:i,lastY:s});else try{n.handleDragStop(new MouseEvent("mouseup"))}catch(t){var p=document.createEvent("MouseEvents");p.initMouseEvent("mouseup",!0,!0,window,0,0,0,0,0,!1,!1,!1,!1,0,null),n.handleDragStop(p)}}}),G(H(n),"handleDragStop",function(t){if(n.state.dragging){var e=L(t,n.state.touchIdentifier,H(n));if(null!=e){var r=e.x,o=e.y,a=R(H(n),r,o),i=u.a.findDOMNode(H(n));i&&n.props.enableUserSelectHack&&k(i.ownerDocument),n.setState({dragging:!1,lastX:NaN,lastY:NaN}),n.props.onStop(t,a),i&&(P(i.ownerDocument,F.move,n.handleDrag),P(i.ownerDocument,F.stop,n.handleDragStop))}}}),G(H(n),"onMouseDown",function(t){return F=z.mouse,n.handleDragStart(t)}),G(H(n),"onMouseUp",function(t){return F=z.mouse,n.handleDragStop(t)}),G(H(n),"onTouchStart",function(t){return F=z.touch,n.handleDragStart(t)}),G(H(n),"onTouchEnd",function(t){return F=z.touch,n.handleDragStop(t)}),n}var n,r,a;return function(t,e){if("function"!=typeof e&&null!==e)throw new TypeError("Super expression must either be null or a function");t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,writable:!0,configurable:!0}}),e&&q(t,e)}(e,o.a.Component),n=e,(r=[{key:"componentWillUnmount",value:function(){var t=u.a.findDOMNode(this);if(t){var e=t.ownerDocument;P(e,z.mouse.move,this.handleDrag),P(e,z.touch.move,this.handleDrag),P(e,z.mouse.stop,this.handleDragStop),P(e,z.touch.stop,this.handleDragStop),this.props.enableUserSelectHack&&k(e)}}},{key:"render",value:function(){return o.a.cloneElement(o.a.Children.only(this.props.children),{style:_(this.props.children.props.style),onMouseDown:this.onMouseDown,onTouchStart:this.onTouchStart,onMouseUp:this.onMouseUp,onTouchEnd:this.onTouchEnd})}}])&&W(n.prototype,r),a&&W(n,a),e}();function K(t){return(K="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t})(t)}function Q(){return(Q=Object.assign||function(t){for(var e=1;e<arguments.length;e++){var n=arguments[e];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(t[r]=n[r])}return t}).apply(this,arguments)}function Z(t,e){if(null==t)return{};var n,r,o=function(t,e){if(null==t)return{};var n,r,o={},a=Object.keys(t);for(r=0;r<a.length;r++)n=a[r],e.indexOf(n)>=0||(o[n]=t[n]);return o}(t,e);if(Object.getOwnPropertySymbols){var a=Object.getOwnPropertySymbols(t);for(r=0;r<a.length;r++)n=a[r],e.indexOf(n)>=0||Object.prototype.propertyIsEnumerable.call(t,n)&&(o[n]=t[n])}return o}function $(t,e){return function(t){if(Array.isArray(t))return t}(t)||function(t,e){var n=[],r=!0,o=!1,a=void 0;try{for(var i,s=t[Symbol.iterator]();!(r=(i=s.next()).done)&&(n.push(i.value),!e||n.length!==e);r=!0);}catch(t){o=!0,a=t}finally{try{r||null==s.return||s.return()}finally{if(o)throw a}}return n}(t,e)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance")}()}function tt(t,e){var n=Object.keys(t);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(t);e&&(r=r.filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable})),n.push.apply(n,r)}return n}function et(t){for(var e=1;e<arguments.length;e++){var n=null!=arguments[e]?arguments[e]:{};e%2?tt(n,!0).forEach(function(e){st(t,e,n[e])}):Object.getOwnPropertyDescriptors?Object.defineProperties(t,Object.getOwnPropertyDescriptors(n)):tt(n).forEach(function(e){Object.defineProperty(t,e,Object.getOwnPropertyDescriptor(n,e))})}return t}function nt(t){return(nt=Object.setPrototypeOf?Object.getPrototypeOf:function(t){return t.__proto__||Object.getPrototypeOf(t)})(t)}function rt(t){if(void 0===t)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return t}function ot(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}function at(t,e,n){return e&&ot(t.prototype,e),n&&ot(t,n),t}function it(t,e){return(it=Object.setPrototypeOf||function(t,e){return t.__proto__=e,t})(t,e)}function st(t,e,n){return e in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}G(J,"displayName","DraggableCore"),G(J,"propTypes",{allowAnyClick:i.a.bool,disabled:i.a.bool,enableUserSelectHack:i.a.bool,offsetParent:function(t,e){if(t[e]&&1!==t[e].nodeType)throw new Error("Draggable's offsetParent must be a DOM Node.")},grid:i.a.arrayOf(i.a.number),handle:i.a.string,cancel:i.a.string,onStart:i.a.func,onDrag:i.a.func,onStop:i.a.func,onMouseDown:i.a.func,scale:i.a.number,className:y,style:y,transform:y}),G(J,"defaultProps",{allowAnyClick:!1,cancel:null,disabled:!1,enableUserSelectHack:!0,offsetParent:null,handle:null,grid:null,transform:null,onStart:function(){},onDrag:function(){},onStop:function(){},onMouseDown:function(){},scale:1}),n.d(e,"default",function(){return ut}),n.d(e,"DraggableCore",function(){return J});var ut=function(t){function e(t){var n,r,o;return function(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}(this,e),r=this,o=nt(e).call(this,t),n=!o||"object"!==K(o)&&"function"!=typeof o?rt(r):o,st(rt(n),"onDragStart",function(t,e){if(!1===n.props.onStart(t,A(rt(n),e)))return!1;n.setState({dragging:!0,dragged:!0})}),st(rt(n),"onDrag",function(t,e){if(!n.state.dragging)return!1;var r=A(rt(n),e),o={x:r.x,y:r.y};if(n.props.bounds){var a=o.x,i=o.y;o.x+=n.state.slackX,o.y+=n.state.slackY;var s=$(function(t,e,n){if(!t.props.bounds)return[e,n];var r=t.props.bounds;r="string"==typeof r?r:function(t){return{left:t.left,top:t.top,right:t.right,bottom:t.bottom}}(r);var o=I(t);if("string"==typeof r){var a,i=o.ownerDocument,s=i.defaultView;if(!((a="parent"===r?o.parentNode:i.querySelector(r))instanceof s.HTMLElement))throw new Error('Bounds selector "'+r+'" could not find an element.');var u=s.getComputedStyle(o),c=s.getComputedStyle(a);r={left:-o.offsetLeft+g(c.paddingLeft)+g(u.marginLeft),top:-o.offsetTop+g(c.paddingTop)+g(u.marginTop),right:N(a)-E(o)-o.offsetLeft+g(c.paddingRight)-g(u.marginRight),bottom:T(a)-j(o)-o.offsetTop+g(c.paddingBottom)-g(u.marginBottom)}}return d(r.right)&&(e=Math.min(e,r.right)),d(r.bottom)&&(n=Math.min(n,r.bottom)),d(r.left)&&(e=Math.max(e,r.left)),d(r.top)&&(n=Math.max(n,r.top)),[e,n]}(rt(n),o.x,o.y),2),u=s[0],c=s[1];o.x=u,o.y=c,o.slackX=n.state.slackX+(a-o.x),o.slackY=n.state.slackY+(i-o.y),r.x=o.x,r.y=o.y,r.deltaX=o.x-n.state.x,r.deltaY=o.y-n.state.y}if(!1===n.props.onDrag(t,r))return!1;n.setState(o)}),st(rt(n),"onDragStop",function(t,e){if(!n.state.dragging)return!1;if(!1===n.props.onStop(t,A(rt(n),e)))return!1;var r={dragging:!1,slackX:0,slackY:0};if(Boolean(n.props.position)){var o=n.props.position,a=o.x,i=o.y;r.x=a,r.y=i}n.setState(r)}),n.state={dragging:!1,dragged:!1,x:t.position?t.position.x:t.defaultPosition.x,y:t.position?t.position.y:t.defaultPosition.y,prevPropsPosition:et({},t.position),slackX:0,slackY:0,isElementSVG:!1},!t.position||t.onDrag||t.onStop||console.warn("A `position` was applied to this <Draggable>, without drag handlers. This will make this component effectively undraggable. Please attach `onDrag` or `onStop` handlers so you can adjust the `position` of this element."),n}return function(t,e){if("function"!=typeof e&&null!==e)throw new TypeError("Super expression must either be null or a function");t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,writable:!0,configurable:!0}}),e&&it(t,e)}(e,o.a.Component),at(e,null,[{key:"getDerivedStateFromProps",value:function(t,e){var n=t.position,r=e.prevPropsPosition;return!n||r&&n.x===r.x&&n.y===r.y?null:{x:n.x,y:n.y,prevPropsPosition:et({},n)}}}]),at(e,[{key:"componentDidMount",value:function(){void 0!==window.SVGElement&&u.a.findDOMNode(this)instanceof window.SVGElement&&this.setState({isElementSVG:!0})}},{key:"componentWillUnmount",value:function(){this.setState({dragging:!1})}},{key:"render",value:function(){var t,e=this.props,n=(e.axis,e.bounds,e.children),r=e.defaultPosition,a=e.defaultClassName,i=e.defaultClassNameDragging,s=e.defaultClassNameDragged,u=e.position,c=e.positionOffset,f=(e.scale,Z(e,["axis","bounds","children","defaultPosition","defaultClassName","defaultClassNameDragging","defaultClassNameDragged","position","positionOffset","scale"])),p={},d=null,g=!Boolean(u)||this.state.dragging,y=u||r,h={x:X(this)&&g?this.state.x:y.x,y:Y(this)&&g?this.state.y:y.y};this.state.isElementSVG?d=function(t,e){return C(t,e,"")}(h,c):p=function(t,e){var n=C(t,e,"px");return w({},b("transform",m),n)}(h,c);var v=l()(n.props.className||"",a,(st(t={},i,this.state.dragging),st(t,s,this.state.dragged),t));return o.a.createElement(J,Q({},f,{onStart:this.onDragStart,onDrag:this.onDrag,onStop:this.onDragStop}),o.a.cloneElement(o.a.Children.only(n),{className:v,style:et({},n.props.style,{},p),transform:d}))}}]),e}();st(ut,"displayName","Draggable"),st(ut,"propTypes",et({},J.propTypes,{axis:i.a.oneOf(["both","x","y","none"]),bounds:i.a.oneOfType([i.a.shape({left:i.a.number,right:i.a.number,top:i.a.number,bottom:i.a.number}),i.a.string,i.a.oneOf([!1])]),defaultClassName:i.a.string,defaultClassNameDragging:i.a.string,defaultClassNameDragged:i.a.string,defaultPosition:i.a.shape({x:i.a.number,y:i.a.number}),positionOffset:i.a.shape({x:i.a.oneOfType([i.a.number,i.a.string]),y:i.a.oneOfType([i.a.number,i.a.string])}),position:i.a.shape({x:i.a.number,y:i.a.number}),className:y,style:y,transform:y})),st(ut,"defaultProps",et({},J.defaultProps,{axis:"both",bounds:!1,defaultClassName:"react-draggable",defaultClassNameDragging:"react-draggable-dragging",defaultClassNameDragged:"react-draggable-dragged",defaultPosition:{x:0,y:0},position:null,scale:1}))}])});
+//# sourceMappingURL=react-draggable.min.js.map
+
+/***/ }),
+
 /***/ "./node_modules/react-is/cjs/react-is.development.js":
 /*!***********************************************************!*\
   !*** ./node_modules/react-is/cjs/react-is.development.js ***!
@@ -52422,6 +52967,133 @@ module.exports = g;
 
 /***/ }),
 
+/***/ "./src/components/DragWrapper.tsx":
+/*!****************************************!*\
+  !*** ./src/components/DragWrapper.tsx ***!
+  \****************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return DragWrapper; });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var react_draggable__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-draggable */ "./node_modules/react-draggable/build/web/react-draggable.min.js");
+/* harmony import */ var react_draggable__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react_draggable__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react-draggable/build/utils/domFns */ "./node_modules/react-draggable/build/utils/domFns.js");
+/* harmony import */ var react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react-draggable/build/utils/shims */ "./node_modules/react-draggable/build/utils/shims.js");
+/* harmony import */ var react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+
+var DragWrapper =
+/*#__PURE__*/
+function (_React$Component) {
+  _inherits(DragWrapper, _React$Component);
+
+  function DragWrapper(props) {
+    var _this;
+
+    _classCallCheck(this, DragWrapper);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(DragWrapper).call(this, props));
+    _this.state = {
+      x: 0,
+      y: 0
+    };
+    return _this;
+  }
+
+  _createClass(DragWrapper, [{
+    key: "resetPos",
+    value: function resetPos(pos) {
+      this.setState({
+        x: this.state.x + (pos.x || 0),
+        y: this.state.y + (pos.y || 0)
+      });
+    }
+  }, {
+    key: "dragMove",
+    value: function dragMove(e, data) {
+      // 参照react-draggable获取父元素边界
+      var x = data.x,
+          y = data.y,
+          node = data.node,
+          lastX = data.lastX,
+          lastY = data.lastY; // 当前位置
+
+      var ownerDocument = node.ownerDocument;
+      var parent = node.parentNode;
+      var ownerWindow = ownerDocument.defaultView;
+      var nodeStyle = ownerWindow.getComputedStyle(node);
+      var boundNodeStyle = ownerWindow.getComputedStyle(parent);
+      var parentBounds = {
+        left: -node.offsetLeft + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingLeft) + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginLeft),
+        top: -node.offsetTop + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingTop) + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginTop),
+        right: Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["innerWidth"])(parent) - Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["outerWidth"])(node) - node.offsetLeft + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingRight) - Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginRight),
+        bottom: Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["innerHeight"])(parent) - Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["outerHeight"])(node) - node.offsetTop + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingBottom) - Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginBottom)
+      }; // 该边界是否在parent内[可能有right>left的情形]
+
+      var getNewPos = function getNewPos(val, boda, bodb) {
+        if (Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["isNum"])(boda) && Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["isNum"])(bodb)) {
+          var min = Math.min(boda, bodb);
+          var max = Math.max(boda, bodb);
+          return Math.max(min, Math.min(val, max));
+        } else {
+          return val;
+        }
+      };
+
+      var pos = {
+        x: getNewPos(x, parentBounds.left, parentBounds.right),
+        y: getNewPos(y, parentBounds.top, parentBounds.bottom)
+      };
+      this.setState(pos);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this$state = this.state,
+          x = _this$state.x,
+          y = _this$state.y;
+      return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_draggable__WEBPACK_IMPORTED_MODULE_1___default.a, {
+        onDrag: this.dragMove.bind(this),
+        disabled: this.props.disabled,
+        position: {
+          x: x,
+          y: y
+        }
+      }, this.props.children);
+    }
+  }]);
+
+  return DragWrapper;
+}(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
+
+
+
+/***/ }),
+
 /***/ "./src/components/Palette.tsx":
 /*!************************************!*\
   !*** ./src/components/Palette.tsx ***!
@@ -52438,6 +53110,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_stageEvents_StageEventType__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/stageEvents/StageEventType */ "./src/tools/stageEvents/StageEventType.ts");
+/* harmony import */ var _DragWrapper__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./DragWrapper */ "./src/components/DragWrapper.tsx");
+
+
 
 
 
@@ -52463,6 +53139,7 @@ function Palette(props) {
   var pixelRatio = 1 / scaleRatio;
   konva__WEBPACK_IMPORTED_MODULE_0___default.a.pixelRatio = pixelRatio;
   var currentPluginRef = Object(react__WEBPACK_IMPORTED_MODULE_1__["useRef"])(props.currentPlugin);
+  var dragRef = Object(react__WEBPACK_IMPORTED_MODULE_1__["useRef"])(null);
 
   function initPalette() {
     stageRef.current = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Stage({
@@ -52471,6 +53148,14 @@ function Palette(props) {
       height: canvasHeight
     });
     stageRef.current._pixelRatio = pixelRatio;
+    (props.stageEvents || []).map(function (eventname) {
+      if (_tools_stageEvents_StageEventType__WEBPACK_IMPORTED_MODULE_4__["defaultStageEvents"][eventname]) {
+        var curevent = _tools_stageEvents_StageEventType__WEBPACK_IMPORTED_MODULE_4__["defaultStageEvents"][eventname];
+        stageRef.current.on(curevent.eventName, function (e) {
+          return curevent.handle(getDrawEventPramas(e), e);
+        });
+      }
+    });
     props.getStage && props.getStage(stageRef.current);
   }
 
@@ -52512,7 +53197,8 @@ function Palette(props) {
       historyStack: historyStack.current,
       pixelRatio: pixelRatio,
       event: e,
-      plugins: props.plugins
+      plugins: props.plugins,
+      dragNode: dragRef.current
     };
     return drawEventPramas;
   }
@@ -52628,7 +53314,11 @@ function Palette(props) {
   Object(react__WEBPACK_IMPORTED_MODULE_1__["useEffect"])(function () {
     var prevCurrentPlugin = currentPluginRef.current;
 
-    if (props.currentPlugin && prevCurrentPlugin && props.currentPlugin.name !== prevCurrentPlugin.name && props.currentPlugin.params) {
+    if (props.currentPlugin && prevCurrentPlugin && props.currentPlugin.name !== prevCurrentPlugin.name) {
+      prevCurrentPlugin.onLeave && prevCurrentPlugin.onLeave(getDrawEventPramas(null));
+    }
+
+    if (prevCurrentPlugin && !props.currentPlugin) {
       prevCurrentPlugin.onLeave && prevCurrentPlugin.onLeave(getDrawEventPramas(null));
     }
 
@@ -52638,13 +53328,20 @@ function Palette(props) {
 
     currentPluginRef.current = props.currentPlugin;
   }, [props.currentPlugin]);
-  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
-    className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-palette"),
-    style: style
+  var dragcls = props.currentPlugin ? "nodarg" : "candrag";
+  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_DragWrapper__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    ref: function ref(node) {
+      return dragRef.current = node;
+    },
+    disabled: !!props.currentPlugin
+  }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    className: "react-img-editor-dragbox ".concat(dragcls)
+  }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-palette")
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     id: containerIdRef.current,
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-container")
-  }));
+  }))));
 }
 
 /***/ }),
@@ -52708,9 +53405,9 @@ function FontSizeSetting(props) {
       margin: '0 8px'
     }
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"], "-font-size ").concat(props.value === 12 ? _constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"] + '-font-size-activated' : ''),
+    className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"], "-font-size ").concat(props.value === 14 ? _constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"] + '-font-size-activated' : ''),
     onClick: function onClick() {
-      return props.onChange(12);
+      return props.onChange(14);
     }
   }, "\u5C0F"), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"], "-font-size ").concat(props.value === 16 ? _constants__WEBPACK_IMPORTED_MODULE_1__["prefixCls"] + '-font-size-activated' : ''),
@@ -52978,13 +53675,15 @@ function Toolbar(props) {
 /*!**************************!*\
   !*** ./src/constants.ts ***!
   \**************************/
-/*! exports provided: prefixCls, transformerStyle */
+/*! exports provided: prefixCls, transformerStyle, ZOOM_RATE, ZOOM_WHEEL_RATE */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "prefixCls", function() { return prefixCls; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "transformerStyle", function() { return transformerStyle; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ZOOM_RATE", function() { return ZOOM_RATE; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ZOOM_WHEEL_RATE", function() { return ZOOM_WHEEL_RATE; });
 var prefixCls = 'react-img-editor';
 var transformerStyle = {
   centeredScaling: false,
@@ -52998,6 +53697,8 @@ var transformerStyle = {
   anchorSize: 6,
   rotateAnchorOffset: 20
 };
+var ZOOM_RATE = 1.2;
+var ZOOM_WHEEL_RATE = 1.01;
 
 /***/ }),
 
@@ -53082,13 +53783,17 @@ function ReactImageEditor(props) {
       setCurrentPluginParamValue = _useState6[1];
 
   function handlePluginChange(plugin) {
-    setCurrentPlugin(plugin);
-    plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue);
+    if (currentPlugin && plugin.name === currentPlugin.name) {
+      setCurrentPlugin(null);
+    } else {
+      setCurrentPlugin(plugin);
+      plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue);
 
-    if (!plugin.params) {
-      setTimeout(function () {
-        setCurrentPlugin(null);
-      });
+      if (!plugin.params) {
+        setTimeout(function () {
+          setCurrentPlugin(null);
+        });
+      }
     }
   }
 
@@ -53104,7 +53809,9 @@ function ReactImageEditor(props) {
   return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
     className: "react-img-editor",
     style: style
-  }, imageObj ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_2___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Palette__WEBPACK_IMPORTED_MODULE_1__["default"], {
+  }, imageObj ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    className: "offset-bound"
+  }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Palette__WEBPACK_IMPORTED_MODULE_1__["default"], {
     width: props.width,
     height: props.height - 42,
     imageObj: imageObj,
@@ -53112,7 +53819,8 @@ function ReactImageEditor(props) {
     currentPlugin: currentPlugin,
     currentPluginParamValue: currentPluginParamValue,
     getStage: props.getStage,
-    handlePluginChange: handlePluginChange
+    handlePluginChange: handlePluginChange,
+    stageEvents: props.stageEvents
   }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Toolbar__WEBPACK_IMPORTED_MODULE_3__["default"], {
     width: props.width,
     plugins: plugins,
@@ -53128,8 +53836,9 @@ ReactImageEditor.defaultProps = {
   height: 500,
   style: {},
   plugins: [],
+  stageEvents: [],
   toolbar: {
-    items: ['pen', 'eraser', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop']
+    items: ['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout']
   }
 };
 
@@ -53150,6 +53859,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -53163,6 +53873,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -53296,7 +54007,7 @@ function (_Plugin) {
       if (!_this.isPaint || _this.transformer) return;
 
       if (!_this.started) {
-        var _pos = stage.getPointerPosition();
+        var _pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
 
         _this.startPoints = [_pos.x, _pos.y];
         var strokeColor = paramValue && paramValue.color ? paramValue.color : _this.defalutParamValue.color;
@@ -53325,7 +54036,7 @@ function (_Plugin) {
         _this.started = true;
       }
 
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
 
       _this.lastArrow.points([_this.startPoints[0], _this.startPoints[1], pos.x, pos.y]);
 
@@ -53389,6 +54100,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -53402,6 +54114,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -53535,7 +54248,7 @@ function (_Plugin) {
       if (!_this.isPaint || _this.transformer) return;
 
       if (!_this.started) {
-        var _pos = stage.getPointerPosition();
+        var _pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
 
         _this.startPoint = [_pos.x, _pos.y];
         _this.lastCircle = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Circle({
@@ -53562,7 +54275,7 @@ function (_Plugin) {
         _this.started = true;
       }
 
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
       var radius = Math.sqrt(Math.pow(pos.x - _this.startPoint[0], 2) + Math.pow(pos.y - _this.startPoint[1], 2)) / 2;
 
       _this.lastCircle.x((pos.x + _this.startPoint[0]) / 2);
@@ -53631,6 +54344,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -53644,6 +54358,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -53779,10 +54494,12 @@ function (_Plugin) {
     };
 
     _this.onDrawStart = function (drawEventPramas) {
+      // 当鼠标移出 stage 时，不会触发 mouseup，重新回到 stage 时，会重新触发 onDrawStart，这里就是为了防止重新触发 onDrawStart
+      if (_this.isPaint) return;
       var stage = drawEventPramas.stage;
       if (document.getElementById(_this.toolbarId)) return;
       _this.isPaint = true;
-      var startPos = stage.getPointerPosition();
+      var startPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
       _this.virtualLayer = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Layer();
       stage.add(_this.virtualLayer);
 
@@ -53822,10 +54539,10 @@ function (_Plugin) {
     };
 
     _this.onDraw = function (drawEventPramas) {
-      var stage = drawEventPramas.stage;
       if (!_this.isPaint) return;
       if (document.getElementById(_this.toolbarId)) return;
-      var endPos = stage.getPointerPosition(); // 绘制初始裁剪区域
+      var stage = drawEventPramas.stage;
+      var endPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage); // 绘制初始裁剪区域
 
       _this.rect.width(endPos.x - _this.getRectX());
 
@@ -54068,6 +54785,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var konva__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(konva__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
@@ -54079,6 +54797,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -54109,7 +54828,7 @@ function (_Plugin) {
       var stage = drawEventPramas.stage,
           layer = drawEventPramas.layer,
           paramValue = drawEventPramas.paramValue;
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__["default"].getPointPos(stage);
       _this.isPaint = true;
       _this.lastLine = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Line({
         id: Object(_utils__WEBPACK_IMPORTED_MODULE_2__["uuid"])(),
@@ -54125,7 +54844,7 @@ function (_Plugin) {
       if (!_this.isPaint) return;
       var stage = drawEventPramas.stage,
           layer = drawEventPramas.layer;
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__["default"].getPointPos(stage);
 
       var newPoints = _this.lastLine.points().concat([pos.x, pos.y]);
 
@@ -54154,6 +54873,247 @@ function (_Plugin) {
 
 /***/ }),
 
+/***/ "./src/plugins/Line.ts":
+/*!*****************************!*\
+  !*** ./src/plugins/Line.ts ***!
+  \*****************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Line; });
+/* harmony import */ var konva__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! konva */ "./node_modules/konva/lib/index.js");
+/* harmony import */ var konva__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(konva__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+
+
+var Line =
+/*#__PURE__*/
+function (_Plugin) {
+  _inherits(Line, _Plugin);
+
+  function Line() {
+    var _this;
+
+    _classCallCheck(this, Line);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Line).apply(this, arguments));
+    _this.name = 'line';
+    _this.iconfont = 'iconfont icon-line2';
+    _this.title = '插入直线';
+    _this.params = ['strokeWidth', 'lineType', 'color'];
+    _this.defalutParamValue = {
+      strokeWidth: 2,
+      lineType: 'solid',
+      color: '#F5222D'
+    };
+    _this.shapeName = 'line';
+    _this.lastLine = null;
+    _this.transformer = null;
+    _this.selectedNode = null;
+    _this.isPaint = false;
+    _this.started = false;
+    _this.startPoints = [0, 0];
+
+    _this.enableTransform = function (drawEventPramas, node) {
+      var stage = drawEventPramas.stage,
+          layer = drawEventPramas.layer;
+
+      if (!_this.transformer) {
+        _this.transformer = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Transformer(_extends(_extends({}, _constants__WEBPACK_IMPORTED_MODULE_2__["transformerStyle"]), {
+          rotateEnabled: true
+        }));
+        layer.add(_this.transformer);
+
+        _this.transformer.attachTo(node);
+
+        node.on('mouseenter', function () {
+          stage.container().style.cursor = 'move';
+        });
+        node.on('mouseleave', function () {
+          stage.container().style.cursor = 'default';
+        });
+        stage.container().style.cursor = 'move';
+      }
+
+      node && node.draggable(true);
+      layer.draw();
+    };
+
+    _this.disableTransform = function (drawEventPramas, node, remove) {
+      var stage = drawEventPramas.stage,
+          layer = drawEventPramas.layer,
+          historyStack = drawEventPramas.historyStack;
+
+      if (_this.transformer) {
+        _this.transformer.remove();
+
+        _this.transformer = null;
+      }
+
+      if (node) {
+        node.draggable(false);
+        node.off('mouseenter');
+        node.off('mouseleave');
+        stage.container().style.cursor = 'default';
+
+        if (remove) {
+          node.hide(); // 使用隐藏节点占位并覆盖堆栈中已有节点
+
+          historyStack.push(node.toObject());
+          node.remove();
+        }
+      }
+
+      _this.selectedNode = null;
+      layer.draw();
+    };
+
+    _this.onEnter = function (drawEventPramas) {
+      var stage = drawEventPramas.stage,
+          layer = drawEventPramas.layer;
+      var container = stage.container();
+      container.tabIndex = 1; // make it focusable
+
+      container.focus();
+      container.addEventListener('keyup', function (e) {
+        if (e.key === 'Backspace' && _this.selectedNode) {
+          _this.disableTransform(drawEventPramas, _this.selectedNode, true);
+
+          layer.draw();
+        }
+      });
+    };
+
+    _this.onClick = function (drawEventPramas) {
+      var event = drawEventPramas.event;
+
+      if (event.target.name && event.target.name() === 'line') {
+        // 之前没有选中节点或者在相同节点之间切换点击
+        if (!_this.selectedNode || _this.selectedNode._id !== event.target._id) {
+          _this.selectedNode && _this.disableTransform(drawEventPramas, _this.selectedNode);
+
+          _this.enableTransform(drawEventPramas, event.target);
+
+          _this.selectedNode = event.target;
+        }
+      } else {
+        _this.disableTransform(drawEventPramas, _this.selectedNode);
+      }
+    };
+
+    _this.onDrawStart = function () {
+      _this.isPaint = true;
+    };
+
+    _this.onDraw = function (drawEventPramas) {
+      var stage = drawEventPramas.stage,
+          layer = drawEventPramas.layer,
+          paramValue = drawEventPramas.paramValue,
+          historyStack = drawEventPramas.historyStack;
+      if (!_this.isPaint || _this.transformer) return;
+
+      if (!_this.started) {
+        var _pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
+
+        _this.startPoints = [_pos.x, _pos.y];
+        var strokeColor = paramValue && paramValue.color ? paramValue.color : _this.defalutParamValue.color;
+        _this.lastLine = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Line({
+          id: Object(_utils__WEBPACK_IMPORTED_MODULE_3__["uuid"])(),
+          name: 'line',
+          stroke: strokeColor,
+          strokeWidth: paramValue && paramValue.strokeWidth ? paramValue.strokeWidth : _this.defalutParamValue.strokeWidth,
+          globalCompositeOperation: 'source-over',
+          points: _this.startPoints,
+          dashEnabled: !!(paramValue && paramValue.lineType && paramValue.lineType === 'dash'),
+          dash: [8],
+          fill: strokeColor,
+          strokeScaleEnabled: false
+        });
+
+        _this.lastLine.on('transformend', function () {
+          historyStack.push(this.toObject());
+        });
+
+        _this.lastLine.on('dragend', function () {
+          historyStack.push(this.toObject());
+        });
+
+        layer.add(_this.lastLine);
+        _this.started = true;
+      }
+
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
+
+      _this.lastLine.points([_this.startPoints[0], _this.startPoints[1], pos.x, pos.y]);
+
+      layer.batchDraw();
+    };
+
+    _this.onDrawEnd = function (drawEventPramas) {
+      var historyStack = drawEventPramas.historyStack; // mouseup event is triggered by move event but click event
+
+      if (_this.started) {
+        _this.disableTransform(drawEventPramas, _this.selectedNode);
+
+        if (_this.lastLine) {
+          historyStack.push(_this.lastLine.toObject());
+        }
+      }
+
+      _this.isPaint = false;
+      _this.started = false;
+    };
+
+    _this.onLeave = function (drawEventPramas) {
+      _this.isPaint = false;
+      _this.started = false;
+
+      _this.disableTransform(drawEventPramas, _this.selectedNode);
+    };
+
+    _this.onNodeRecreate = function (drawEventPramas, node) {
+      var historyStack = drawEventPramas.historyStack;
+      node.on('transformend', function () {
+        historyStack.push(this.toObject());
+      });
+      node.on('dragend', function () {
+        historyStack.push(this.toObject());
+      });
+    };
+
+    return _this;
+  }
+
+  return Line;
+}(_Plugin__WEBPACK_IMPORTED_MODULE_1__["default"]);
+
+
+
+/***/ }),
+
 /***/ "./src/plugins/Mosaic.ts":
 /*!*******************************!*\
   !*** ./src/plugins/Mosaic.ts ***!
@@ -54168,6 +55128,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var konva__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(konva__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -54187,6 +55148,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -54343,7 +55305,7 @@ function (_Plugin) {
           layer = drawEventPramas.layer,
           paramValue = drawEventPramas.paramValue;
       var strokeWidth = paramValue && paramValue.strokeWidth ? paramValue.strokeWidth : _this.defalutParamValue.strokeWidth;
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__["default"].getPointPos(stage);
 
       _this.drawTile(_this.getTilesByPoint(pos.x, pos.y, strokeWidth), layer);
     };
@@ -54382,6 +55344,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var konva__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(konva__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
@@ -54393,6 +55356,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -54425,7 +55389,7 @@ function (_Plugin) {
       var stage = drawEventPramas.stage,
           layer = drawEventPramas.layer,
           paramValue = drawEventPramas.paramValue;
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__["default"].getPointPos(stage);
       _this.isPaint = true;
       _this.lastLine = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Line({
         id: Object(_utils__WEBPACK_IMPORTED_MODULE_2__["uuid"])(),
@@ -54446,7 +55410,7 @@ function (_Plugin) {
       if (!_this.isPaint) return;
       var stage = drawEventPramas.stage,
           layer = drawEventPramas.layer;
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_3__["default"].getPointPos(stage);
 
       var newPoints = _this.lastLine.points().concat([pos.x, pos.y]);
 
@@ -54515,7 +55479,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Rect__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Rect */ "./src/plugins/Rect.ts");
 /* harmony import */ var _Repeal__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Repeal */ "./src/plugins/Repeal.ts");
 /* harmony import */ var _Text__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Text */ "./src/plugins/Text.ts");
+/* harmony import */ var _Rotate__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./Rotate */ "./src/plugins/Rotate.tsx");
+/* harmony import */ var _Zoomin__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./Zoomin */ "./src/plugins/Zoomin.tsx");
+/* harmony import */ var _Zoomout__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./Zoomout */ "./src/plugins/Zoomout.tsx");
+/* harmony import */ var _Line__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./Line */ "./src/plugins/Line.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+
+
+
 
 
 
@@ -54531,7 +55503,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var PluginFactory = function PluginFactory() {
   _classCallCheck(this, PluginFactory);
 
-  this.plugins = [new _Arrow__WEBPACK_IMPORTED_MODULE_0__["default"](), new _Circle__WEBPACK_IMPORTED_MODULE_1__["default"](), new _Crop__WEBPACK_IMPORTED_MODULE_2__["default"](), new _Download__WEBPACK_IMPORTED_MODULE_3__["default"](), new _Eraser__WEBPACK_IMPORTED_MODULE_4__["default"](), new _Mosaic__WEBPACK_IMPORTED_MODULE_5__["default"](), new _Pen__WEBPACK_IMPORTED_MODULE_6__["default"](), new _Rect__WEBPACK_IMPORTED_MODULE_7__["default"](), new _Repeal__WEBPACK_IMPORTED_MODULE_8__["default"](), new _Text__WEBPACK_IMPORTED_MODULE_9__["default"]()];
+  this.plugins = [new _Arrow__WEBPACK_IMPORTED_MODULE_0__["default"](), new _Circle__WEBPACK_IMPORTED_MODULE_1__["default"](), new _Crop__WEBPACK_IMPORTED_MODULE_2__["default"](), new _Download__WEBPACK_IMPORTED_MODULE_3__["default"](), new _Eraser__WEBPACK_IMPORTED_MODULE_4__["default"](), new _Mosaic__WEBPACK_IMPORTED_MODULE_5__["default"](), new _Pen__WEBPACK_IMPORTED_MODULE_6__["default"](), new _Rect__WEBPACK_IMPORTED_MODULE_7__["default"](), new _Repeal__WEBPACK_IMPORTED_MODULE_8__["default"](), new _Text__WEBPACK_IMPORTED_MODULE_9__["default"](), new _Rotate__WEBPACK_IMPORTED_MODULE_10__["default"](), new _Zoomin__WEBPACK_IMPORTED_MODULE_11__["default"](), new _Zoomout__WEBPACK_IMPORTED_MODULE_12__["default"](), new _Line__WEBPACK_IMPORTED_MODULE_13__["default"]()];
 };
 
 
@@ -54553,6 +55525,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -54566,6 +55539,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -54701,7 +55675,7 @@ function (_Plugin) {
       if (!_this.isPaint || _this.transformer) return;
 
       if (!_this.started) {
-        var _pos = stage.getPointerPosition();
+        var _pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
 
         _this.startPoint = [_pos.x, _pos.y];
         _this.lastRect = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Rect({
@@ -54729,7 +55703,7 @@ function (_Plugin) {
         _this.started = true;
       }
 
-      var pos = stage.getPointerPosition();
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
 
       _this.lastRect.width(pos.x - _this.startPoint[0]);
 
@@ -54865,6 +55839,125 @@ function (_Plugin) {
 
 /***/ }),
 
+/***/ "./src/plugins/Rotate.tsx":
+/*!********************************!*\
+  !*** ./src/plugins/Rotate.tsx ***!
+  \********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Rotate; });
+/* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+var Rotate =
+/*#__PURE__*/
+function (_Plugin) {
+  _inherits(Rotate, _Plugin);
+
+  function Rotate() {
+    var _this;
+
+    _classCallCheck(this, Rotate);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Rotate).apply(this, arguments));
+    _this.name = "rotate";
+    _this.iconfont = 'iconfont icon-square';
+    _this.title = '旋转';
+
+    _this.onEnter = function (drawEventPramas) {
+      var layer = drawEventPramas.layer,
+          historyStack = drawEventPramas.historyStack,
+          plugins = drawEventPramas.plugins,
+          imageLayer = drawEventPramas.imageLayer,
+          stage = drawEventPramas.stage;
+
+      var _stage$size = stage.size(),
+          height = _stage$size.height,
+          width = _stage$size.width;
+
+      var scale = stage.scale();
+      stage.setSize({
+        width: height,
+        height: width
+      });
+      var childs = imageLayer.getChildren();
+      childs.map(function (child) {
+        return _this.rotate(child, height, width, scale);
+      });
+      var otherchilds = layer.getChildren();
+      otherchilds.map(function (child) {
+        return _this.rotate(child, height, width, scale);
+      });
+      imageLayer.draw();
+      layer.draw();
+    };
+
+    return _this;
+  }
+
+  _createClass(Rotate, [{
+    key: "rotate",
+    value: function rotate(child, x, y, scale) {
+      // 回0位
+      child.setPosition({
+        x: 0,
+        y: 0
+      });
+      child.setOffset({
+        x: 0,
+        y: 0
+      }); // 旋转
+
+      child.rotate(90);
+      var rotation = child.rotation();
+      child.setRotation(rotation % 360);
+      var num = rotation / 90 % 4;
+
+      if (num === 1) {
+        child.setPosition({
+          x: x / scale.x,
+          y: 0
+        });
+      } else if (num === 2) {
+        child.setPosition({
+          x: x / scale.x,
+          y: y / scale.y
+        });
+      } else if (num === 3) {
+        child.setPosition({
+          x: 0,
+          y: y / scale.y
+        });
+      }
+    }
+  }]);
+
+  return Rotate;
+}(_Plugin__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
 /***/ "./src/plugins/Text.ts":
 /*!*****************************!*\
   !*** ./src/plugins/Text.ts ***!
@@ -54880,6 +55973,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/utils.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -54893,6 +55987,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -54915,7 +56010,7 @@ function (_Plugin) {
     _this.title = '插入文字';
     _this.params = ['fontSize', 'color'];
     _this.defalutParamValue = {
-      fontSize: 12,
+      fontSize: 14,
       color: '#F5222D'
     };
     _this.shapeName = 'text';
@@ -54949,16 +56044,19 @@ function (_Plugin) {
 
     _this.createTextarea = function (stage, layer, transformer, textNode, historyStack) {
       var textarea = document.createElement('textarea');
+      var scale = stage.getScale();
       textarea.value = textNode.text();
       textarea.style.position = 'absolute';
-      textarea.style.left = textNode.x() + 'px';
-      textarea.style.top = textNode.y() + 'px';
-      textarea.style.width = textNode.width() + 'px';
-      textarea.style.height = textNode.height() + 'px';
+      textarea.style.left = textNode.x() * scale.x + 'px';
+      textarea.style.top = textNode.y() * scale.y + 'px';
+      textarea.style.width = "100%";
+      textarea.style.overflow = "auto";
+      textarea.style.wordBreak = "break-all";
+      textarea.style.height = textNode.height() * scale.y + 'px';
       textarea.style.lineHeight = String(textNode.lineHeight());
       textarea.style.padding = textNode.padding() + 'px';
       textarea.style.margin = '0px';
-      textarea.style.fontSize = textNode.fontSize() + 'px';
+      textarea.style.fontSize = textNode.fontSize() * scale.x + 'px';
       textarea.style.color = textNode.fill();
       textarea.style.fontFamily = textNode.fontFamily();
       textarea.style.border = 'none';
@@ -54970,9 +56068,9 @@ function (_Plugin) {
       textarea.style.boxSizing = 'content-box';
       textarea.addEventListener('keyup', function (e) {
         textNode.text(e.target.value);
-        layer.draw();
-        textarea.style.width = textNode.width() + 'px';
-        textarea.style.height = textNode.height() + 'px';
+        layer.draw(); // textarea.style.width = ((textNode.width())*scale.x) + 'px'
+
+        textarea.style.height = textNode.height() * scale.y + 'px';
       });
       textarea.addEventListener('blur', function () {
         if (textarea.value !== '') {
@@ -55093,7 +56191,7 @@ function (_Plugin) {
 
       var fontSize = paramValue && paramValue.fontSize ? paramValue.fontSize : _this.defalutParamValue.fontSize;
       var color = paramValue && paramValue.color ? paramValue.color : _this.defalutParamValue.color;
-      var startPos = stage.getPointerPosition();
+      var startPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage);
       var textNode = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Text({
         id: Object(_utils__WEBPACK_IMPORTED_MODULE_3__["uuid"])(),
         name: 'text',
@@ -55167,6 +56265,254 @@ function (_Plugin) {
 }(_Plugin__WEBPACK_IMPORTED_MODULE_1__["default"]);
 
 
+
+/***/ }),
+
+/***/ "./src/plugins/Zoomin.tsx":
+/*!********************************!*\
+  !*** ./src/plugins/Zoomin.tsx ***!
+  \********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Zoomin; });
+/* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+var Zoomin =
+/*#__PURE__*/
+function (_Plugin) {
+  _inherits(Zoomin, _Plugin);
+
+  function Zoomin() {
+    var _this;
+
+    _classCallCheck(this, Zoomin);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Zoomin).apply(this, arguments));
+    _this.name = "zoomin";
+    _this.iconfont = 'iconfont icon-minus';
+    _this.title = '缩小';
+
+    _this.onEnter = function (drawEventPramas) {
+      var layer = drawEventPramas.layer,
+          historyStack = drawEventPramas.historyStack,
+          plugins = drawEventPramas.plugins,
+          imageLayer = drawEventPramas.imageLayer,
+          stage = drawEventPramas.stage,
+          dragNode = drawEventPramas.dragNode;
+      var oldscale = stage.scaleX();
+      var pos = {
+        x: 0,
+        y: stage.height() / 2
+      };
+      var newscale = oldscale / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"];
+      stage.scale({
+        x: newscale,
+        y: newscale
+      });
+      var size = stage.size();
+      stage.size({
+        width: size.width / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"],
+        height: size.height / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]
+      });
+      stage.batchDraw();
+      var newPos = {
+        x: pos.x * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
+        y: pos.y * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
+      };
+      dragNode.resetPos(newPos);
+    };
+
+    return _this;
+  }
+
+  return Zoomin;
+}(_Plugin__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
+/***/ "./src/plugins/Zoomout.tsx":
+/*!*********************************!*\
+  !*** ./src/plugins/Zoomout.tsx ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Zoomout; });
+/* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+var Zoomout =
+/*#__PURE__*/
+function (_Plugin) {
+  _inherits(Zoomout, _Plugin);
+
+  function Zoomout() {
+    var _this;
+
+    _classCallCheck(this, Zoomout);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Zoomout).apply(this, arguments));
+    _this.name = "zoomout";
+    _this.iconfont = 'iconfont icon-plus';
+    _this.title = '放大';
+
+    _this.onEnter = function (drawEventPramas) {
+      var layer = drawEventPramas.layer,
+          historyStack = drawEventPramas.historyStack,
+          plugins = drawEventPramas.plugins,
+          imageLayer = drawEventPramas.imageLayer,
+          stage = drawEventPramas.stage,
+          dragNode = drawEventPramas.dragNode;
+      var oldscale = stage.scaleX();
+      var pos = {
+        x: 0,
+        y: stage.height() / 2
+      };
+      var newscale = oldscale * _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"];
+      stage.scale({
+        x: newscale,
+        y: newscale
+      });
+      var size = stage.size();
+      stage.size({
+        width: size.width * _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"],
+        height: size.height * _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]
+      });
+      stage.batchDraw();
+      var newPos = {
+        x: pos.x * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
+        y: pos.y * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
+      };
+      dragNode.resetPos(newPos);
+    };
+
+    return _this;
+  }
+
+  return Zoomout;
+}(_Plugin__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
+/***/ "./src/tools/PointUtil.ts":
+/*!********************************!*\
+  !*** ./src/tools/PointUtil.ts ***!
+  \********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ({
+  getPointPos: function getPointPos(stage) {
+    var pos = stage.getPointerPosition();
+    var scale = stage.getScale();
+    var pointPos = {
+      x: (pos.x - stage.x()) / scale.x,
+      y: (pos.y - stage.y()) / scale.y
+    };
+    return pointPos;
+  }
+});
+
+/***/ }),
+
+/***/ "./src/tools/stageEvents/StageEventType.ts":
+/*!*************************************************!*\
+  !*** ./src/tools/stageEvents/StageEventType.ts ***!
+  \*************************************************/
+/*! exports provided: defaultStageEvents */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultStageEvents", function() { return defaultStageEvents; });
+/* harmony import */ var _ZoomOnWheel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ZoomOnWheel */ "./src/tools/stageEvents/ZoomOnWheel.ts");
+
+var defaultStageEvents = {
+  "zoomOnWheel": _ZoomOnWheel__WEBPACK_IMPORTED_MODULE_0__["default"]
+};
+
+/***/ }),
+
+/***/ "./src/tools/stageEvents/ZoomOnWheel.ts":
+/*!**********************************************!*\
+  !*** ./src/tools/stageEvents/ZoomOnWheel.ts ***!
+  \**********************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../constants */ "./src/constants.ts");
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+  eventName: "wheel",
+  handle: function handle(_ref, e) {
+    var stage = _ref.stage,
+        dragNode = _ref.dragNode;
+    e.evt.preventDefault();
+    var oldScale = stage.scaleX();
+    var pos = {
+      x: stage.getPointerPosition().x - stage.width() / 2,
+      y: stage.getPointerPosition().y
+    };
+    var newScale = e.evt.deltaY <= 0 ? 1 * _constants__WEBPACK_IMPORTED_MODULE_0__["ZOOM_WHEEL_RATE"] : 1 / _constants__WEBPACK_IMPORTED_MODULE_0__["ZOOM_WHEEL_RATE"];
+    stage.scale({
+      x: newScale * oldScale,
+      y: newScale * oldScale
+    });
+    var size = stage.size();
+    stage.size({
+      width: size.width * newScale,
+      height: size.height * newScale
+    });
+    stage.batchDraw();
+    var newPos = {
+      x: pos.x * (1 - newScale),
+      y: pos.y * (1 - newScale)
+    };
+    dragNode.resetPos(newPos);
+  }
+});
 
 /***/ }),
 
