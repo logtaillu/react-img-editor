@@ -1,6 +1,7 @@
 import Plugin from './Plugin';
 import Konva from "konva";
 import { DrawEventPramas } from '../type';
+import PointUtil from '../tools/PointUtil';
 export default class Rotate extends Plugin {
     name = "rotate";
     iconfont = 'iconfont icon-square';
@@ -25,8 +26,9 @@ export default class Rotate extends Plugin {
     }
 
     onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { layer, historyStack, plugins, imageLayer, stage } = drawEventPramas;
+        const { layer, historyStack, plugins, imageLayer, stage, dragNode } = drawEventPramas;
         const { height, width } = stage.size();
+        const pos = PointUtil.getCenterPos(dragNode, stage);
         const scale = stage.scale();
         stage.setSize({ width: height, height: width });
         const childs = imageLayer.getChildren();
@@ -35,5 +37,10 @@ export default class Rotate extends Plugin {
         otherchilds.map(child => this.rotate(child, height, width, scale));
         imageLayer.draw();
         layer.draw();
+        const newPos = PointUtil.getCenterPos(dragNode, stage);
+        dragNode.resetPos({
+            x: newPos.x -pos.x,
+            y: newPos.y - pos.y
+        });
     }
 }

@@ -43,8 +43,10 @@ import 'react-img-editor/assets/index.css'
 | defaultPluginName | 默认选中的插件名称 | string? | - |
 
 
-## 📝 TODO
+
 1. 缩放位置
+1.还原中点位置=>2.还原点位置
+
 2. 缩放上限
 3. 拖拽
 4. 宽度、图标

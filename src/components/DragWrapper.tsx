@@ -18,9 +18,7 @@ export default class DragWrapper extends React.Component<any, any>{
         });
     }
 
-    dragMove(e, data): void | false {
-        // 参照react-draggable获取父元素边界
-        const { x, y, node, lastX, lastY } = data; // 当前位置
+    getBounds(node) {
         const { ownerDocument } = node;
         const parent = node.parentNode;
         const ownerWindow = ownerDocument.defaultView;
@@ -34,6 +32,13 @@ export default class DragWrapper extends React.Component<any, any>{
             bottom: innerHeight(parent) - outerHeight(node) - node.offsetTop +
                 int(boundNodeStyle.paddingBottom) - int(nodeStyle.marginBottom)
         };
+        return parentBounds;
+    }
+
+    dragMove(e, data): void | false {
+        // 参照react-draggable获取父元素边界
+        const { x, y, node, lastX, lastY } = data; // 当前位置
+        const parentBounds = this.getBounds(node);
         // 该边界是否在parent内[可能有right>left的情形]
         const getNewPos = (val, boda, bodb) => {
             if (isNum(boda) && isNum(bodb)) {
@@ -50,12 +55,15 @@ export default class DragWrapper extends React.Component<any, any>{
         };
         this.setState(pos);
     }
-
+    dragref = null;
     render() {
         const { x, y } = this.state;
+        const dragcls = this.props.disabled ? "nodarg" : "candrag";
         return (
             <Draggable onDrag={this.dragMove.bind(this)} disabled={this.props.disabled} position={{ x, y }}>
-                {this.props.children}
+                <div className={`react-img-editor-dragbox ${dragcls}`} ref={c => this.dragref = c}>
+                    {this.props.children}
+                </div>
             </Draggable>
         );
     }
