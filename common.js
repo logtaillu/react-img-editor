@@ -56337,8 +56337,7 @@ function (_Plugin) {
       var newPos = {
         x: pos.x * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
         y: pos.y * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
-      };
-      dragNode.resetPos(newPos);
+      }; // dragNode.resetPos(newPos);
     };
 
     return _this;
@@ -56419,8 +56418,7 @@ function (_Plugin) {
       var newPos = {
         x: pos.x * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
         y: pos.y * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
-      };
-      dragNode.resetPos(newPos);
+      }; // dragNode.resetPos(newPos);
     };
 
     return _this;
@@ -56510,8 +56508,7 @@ __webpack_require__.r(__webpack_exports__);
     var newPos = {
       x: pos.x * (1 - newScale),
       y: pos.y * (1 - newScale)
-    };
-    dragNode.resetPos(newPos);
+    }; // dragNode.resetPos(newPos);
   }
 });
 
