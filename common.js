@@ -53017,6 +53017,7 @@ function (_React$Component) {
     _classCallCheck(this, DragWrapper);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(DragWrapper).call(this, props));
+    _this.dragref = null;
     _this.state = {
       x: 0,
       y: 0
@@ -53033,15 +53034,8 @@ function (_React$Component) {
       });
     }
   }, {
-    key: "dragMove",
-    value: function dragMove(e, data) {
-      // 参照react-draggable获取父元素边界
-      var x = data.x,
-          y = data.y,
-          node = data.node,
-          lastX = data.lastX,
-          lastY = data.lastY; // 当前位置
-
+    key: "getBounds",
+    value: function getBounds(node) {
       var ownerDocument = node.ownerDocument;
       var parent = node.parentNode;
       var ownerWindow = ownerDocument.defaultView;
@@ -53052,7 +53046,20 @@ function (_React$Component) {
         top: -node.offsetTop + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingTop) + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginTop),
         right: Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["innerWidth"])(parent) - Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["outerWidth"])(node) - node.offsetLeft + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingRight) - Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginRight),
         bottom: Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["innerHeight"])(parent) - Object(react_draggable_build_utils_domFns__WEBPACK_IMPORTED_MODULE_2__["outerHeight"])(node) - node.offsetTop + Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(boundNodeStyle.paddingBottom) - Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["int"])(nodeStyle.marginBottom)
-      }; // 该边界是否在parent内[可能有right>left的情形]
+      };
+      return parentBounds;
+    }
+  }, {
+    key: "dragMove",
+    value: function dragMove(e, data) {
+      // 参照react-draggable获取父元素边界
+      var x = data.x,
+          y = data.y,
+          node = data.node,
+          lastX = data.lastX,
+          lastY = data.lastY; // 当前位置
+
+      var parentBounds = this.getBounds(node); // 该边界是否在parent内[可能有right>left的情形]
 
       var getNewPos = function getNewPos(val, boda, bodb) {
         if (Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["isNum"])(boda) && Object(react_draggable_build_utils_shims__WEBPACK_IMPORTED_MODULE_3__["isNum"])(bodb)) {
@@ -53073,9 +53080,12 @@ function (_React$Component) {
   }, {
     key: "render",
     value: function render() {
+      var _this2 = this;
+
       var _this$state = this.state,
           x = _this$state.x,
           y = _this$state.y;
+      var dragcls = this.props.disabled ? "nodarg" : "candrag";
       return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_draggable__WEBPACK_IMPORTED_MODULE_1___default.a, {
         onDrag: this.dragMove.bind(this),
         disabled: this.props.disabled,
@@ -53083,7 +53093,12 @@ function (_React$Component) {
           x: x,
           y: y
         }
-      }, this.props.children);
+      }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "react-img-editor-dragbox ".concat(dragcls),
+        ref: function ref(c) {
+          return _this2.dragref = c;
+        }
+      }, this.props.children));
     }
   }]);
 
@@ -53328,7 +53343,6 @@ function Palette(props) {
 
     currentPluginRef.current = props.currentPlugin;
   }, [props.currentPlugin]);
-  var dragcls = props.currentPlugin ? "nodarg" : "candrag";
   return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     className: "offset-bound",
     style: style
@@ -53338,13 +53352,11 @@ function Palette(props) {
     },
     disabled: !!props.currentPlugin
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
-    className: "react-img-editor-dragbox ".concat(dragcls)
-  }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-palette")
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     id: containerIdRef.current,
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-container")
-  })))));
+  }))));
 }
 
 /***/ }),
@@ -55851,6 +55863,7 @@ function (_Plugin) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Rotate; });
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -55866,6 +55879,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -55889,12 +55903,14 @@ function (_Plugin) {
           historyStack = drawEventPramas.historyStack,
           plugins = drawEventPramas.plugins,
           imageLayer = drawEventPramas.imageLayer,
-          stage = drawEventPramas.stage;
+          stage = drawEventPramas.stage,
+          dragNode = drawEventPramas.dragNode;
 
       var _stage$size = stage.size(),
           height = _stage$size.height,
           width = _stage$size.width;
 
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_1__["default"].getCenterPos(dragNode, stage);
       var scale = stage.scale();
       stage.setSize({
         width: height,
@@ -55910,6 +55926,11 @@ function (_Plugin) {
       });
       imageLayer.draw();
       layer.draw();
+      var newPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_1__["default"].getCenterPos(dragNode, stage);
+      dragNode.resetPos({
+        x: newPos.x - pos.x,
+        y: newPos.y - pos.y
+      });
     };
 
     return _this;
@@ -56281,6 +56302,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Zoomin; });
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
@@ -56292,6 +56314,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -56319,10 +56342,7 @@ function (_Plugin) {
           stage = drawEventPramas.stage,
           dragNode = drawEventPramas.dragNode;
       var oldscale = stage.scaleX();
-      var pos = {
-        x: 0,
-        y: stage.height() / 2
-      };
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__["default"].getCenterPos(dragNode, stage);
       var newscale = oldscale / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"];
       stage.scale({
         x: newscale,
@@ -56334,10 +56354,11 @@ function (_Plugin) {
         height: size.height / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]
       });
       stage.batchDraw();
-      var newPos = {
-        x: pos.x * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
-        y: pos.y * (1 - 1 / _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
-      }; // dragNode.resetPos(newPos);
+      var newPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__["default"].getCenterPos(dragNode, stage);
+      dragNode.resetPos({
+        x: newPos.x - pos.x,
+        y: newPos.y - pos.y
+      });
     };
 
     return _this;
@@ -56362,6 +56383,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Zoomout; });
 /* harmony import */ var _Plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Plugin */ "./src/plugins/Plugin.ts");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.ts");
+/* harmony import */ var _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../tools/PointUtil */ "./src/tools/PointUtil.ts");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (call && (typeof call === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
@@ -56373,6 +56395,7 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 
 
 
@@ -56400,10 +56423,7 @@ function (_Plugin) {
           stage = drawEventPramas.stage,
           dragNode = drawEventPramas.dragNode;
       var oldscale = stage.scaleX();
-      var pos = {
-        x: 0,
-        y: stage.height() / 2
-      };
+      var pos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__["default"].getCenterPos(dragNode, stage);
       var newscale = oldscale * _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"];
       stage.scale({
         x: newscale,
@@ -56415,10 +56435,11 @@ function (_Plugin) {
         height: size.height * _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]
       });
       stage.batchDraw();
-      var newPos = {
-        x: pos.x * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"]),
-        y: pos.y * (1 - _constants__WEBPACK_IMPORTED_MODULE_1__["ZOOM_RATE"])
-      }; // dragNode.resetPos(newPos);
+      var newPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_2__["default"].getCenterPos(dragNode, stage);
+      dragNode.resetPos({
+        x: newPos.x - pos.x,
+        y: newPos.y - pos.y
+      });
     };
 
     return _this;
@@ -56449,6 +56470,15 @@ __webpack_require__.r(__webpack_exports__);
       y: (pos.y - stage.y()) / scale.y
     };
     return pointPos;
+  },
+  getCenterPos: function getCenterPos(dragNode, stage) {
+    var bounds = dragNode.getBounds(dragNode.dragref); // 中点位置
+
+    var pos = {
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.top + bounds.bottom) / 2
+    };
+    return pos;
   }
 });
 
@@ -56482,6 +56512,8 @@ var defaultStageEvents = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../constants */ "./src/constants.ts");
+/* harmony import */ var _PointUtil__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../PointUtil */ "./src/tools/PointUtil.ts");
+
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   eventName: "wheel",
@@ -56489,11 +56521,13 @@ __webpack_require__.r(__webpack_exports__);
     var stage = _ref.stage,
         dragNode = _ref.dragNode;
     e.evt.preventDefault();
-    var oldScale = stage.scaleX();
-    var pos = {
+    var oldScale = stage.scaleX(); // 无视scale的点在stage内的位置
+
+    var oldpointpos = {
       x: stage.getPointerPosition().x - stage.width() / 2,
-      y: stage.getPointerPosition().y
+      y: stage.getPointerPosition().y - stage.height() / 2
     };
+    var center = _PointUtil__WEBPACK_IMPORTED_MODULE_1__["default"].getCenterPos(dragNode, stage);
     var newScale = e.evt.deltaY <= 0 ? 1 * _constants__WEBPACK_IMPORTED_MODULE_0__["ZOOM_WHEEL_RATE"] : 1 / _constants__WEBPACK_IMPORTED_MODULE_0__["ZOOM_WHEEL_RATE"];
     stage.scale({
       x: newScale * oldScale,
@@ -56505,10 +56539,17 @@ __webpack_require__.r(__webpack_exports__);
       height: size.height * newScale
     });
     stage.batchDraw();
-    var newPos = {
-      x: pos.x * (1 - newScale),
-      y: pos.y * (1 - newScale)
-    }; // dragNode.resetPos(newPos);
+    var newCenter = _PointUtil__WEBPACK_IMPORTED_MODULE_1__["default"].getCenterPos(dragNode, stage);
+    var newPosoff = {
+      x: oldpointpos.x * (newScale - 1),
+      y: oldpointpos.y * (newScale - 1)
+    }; // 1.保持中点
+    // 2. 偏移点
+
+    dragNode.resetPos({
+      x: newCenter.x - center.x - newPosoff.x,
+      y: newCenter.y - center.y - newPosoff.y
+    });
   }
 });
 
