@@ -16,10 +16,16 @@ interface ReactImageEditorProps {
   getStage?: (stage: any) => void;
   defaultPluginName?: string;
   stageEvents?: string[];//启用默认的几个stage事件
+  closePlugin?: any;
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null)
+  useEffect(() => {
+    if (props.closePlugin) {
+      props.closePlugin(handlePluginChange.bind(this, {} as any));
+    }
+  }, []);
 
   useEffect(() => {
     const image = new Image()

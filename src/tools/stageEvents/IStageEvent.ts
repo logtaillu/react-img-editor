@@ -5,5 +5,5 @@ export interface IStageEvent {
 }
 
 export interface IStageEventMap {
-    [key: string]: IStageEvent
+    [key: string]: IStageEvent[];
 }

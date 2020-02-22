@@ -71,6 +71,8 @@ export default class Text extends Plugin {
     textarea.style.zIndex = '1000'
     textarea.style.boxSizing = 'content-box'
     textarea.addEventListener('keyup', (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
       textNode.text(e.target.value)
       layer.draw()
       // textarea.style.width = ((textNode.width())*scale.x) + 'px'

@@ -53,8 +53,10 @@ export default function Palette(props: PaletteProps) {
     stageRef.current._pixelRatio = pixelRatio;
     (props.stageEvents || []).map(eventname => {
       if (defaultStageEvents[eventname]) {
-        const curevent = defaultStageEvents[eventname];
-        stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
+        const curevents = defaultStageEvents[eventname] || [];
+        curevents.map(curevent=>{
+          stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
+        })
       }
     });
     props.getStage && props.getStage(stageRef.current)
