@@ -3,11 +3,12 @@ import { IStageEvent } from "./IStageEvent";
 function getDistance(p1: { x: number, y: number }, p2: { x: number, y: number }) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
-let lastDist = 0;
+
 export default [
     {
         eventName: "touchmove",
         handle: (params, e: any) => {
+            const { dragNode } = params;
             e.evt.preventDefault();
             const touch1 = e.evt.touches[0];
             const touch2 = e.evt.touches[1];
@@ -23,20 +24,21 @@ export default [
                     }
                 );
 
-                if (!lastDist) {
-                    lastDist = dist;
+                if (!dragNode.lastDist) {
+                    dragNode.lastDist = dist;
                 }
                 // 2点间的距离
-                const scale = dist / lastDist;
+                const scale = dist / dragNode.lastDist;
                 ZoomByScale(params, scale);
-                lastDist = dist;
+                dragNode.lastDist = dist;
             }
         }
     },
     {
         eventName: 'touch',
-        handle: () => {
-            lastDist = 0;
+        handle: (params) => {
+            const { dragNode } = params;
+            dragNode.lastDist = 0;
         }
     }
 ] as IStageEvent[];

@@ -1,6 +1,7 @@
 
 import { DrawEventPramas } from '../type'
 import Plugin from './Plugin'
+import { blobTest } from "../tools/HelperUitl";
 
 export default class Download extends Plugin {
   name = 'download'
@@ -10,6 +11,7 @@ export default class Download extends Plugin {
   onEnter = (drawEventPramas: DrawEventPramas) => {
     const {stage, pixelRatio} = drawEventPramas
     const canvas = stage.toCanvas({ pixelRatio })
+    blobTest();
     canvas.toBlob(function(blob: any) {
       const link = document.createElement('a')
       link.download = ''
