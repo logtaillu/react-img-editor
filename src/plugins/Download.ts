@@ -10,13 +10,15 @@ export default class Download extends Plugin {
 
   onEnter = (drawEventPramas: DrawEventPramas) => {
     const {stage, pixelRatio} = drawEventPramas
-    const canvas = stage.toCanvas({ pixelRatio })
+    let canvas = stage.toCanvas({ pixelRatio })
     blobTest();
     canvas.toBlob(function(blob: any) {
       const link = document.createElement('a')
       link.download = ''
       link.href = URL.createObjectURL(blob)
       link.click()
-    })
+      link.remove();
+    });
+    canvas = null;
   }
 }

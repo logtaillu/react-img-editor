@@ -12,6 +12,7 @@ export interface DrawEventPramas {
   event?: any;
   plugins: Plugin[];
   dragNode: any;
+  currentPluginRef?:any;
 }
 export type PluginParamName = 'strokeWidth' | 'color' | 'fontSize' | 'lineType'
 export interface PluginParamValue {

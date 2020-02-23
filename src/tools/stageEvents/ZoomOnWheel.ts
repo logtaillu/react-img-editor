@@ -37,9 +37,14 @@ export default [{
     eventName: "wheel",
     handle: (params, e) => {
         e.evt.preventDefault();
-        const iszoomout = e.evt.deltaY <= 0;
-        var newScale =
-            iszoomout ? 1 * ZOOM_WHEEL_RATE : 1 / ZOOM_WHEEL_RATE;
-        ZoomByScale(params, newScale);
+        const { currentPluginRef } = params;
+        if (currentPluginRef) {
+            return;
+        } else {
+            const iszoomout = e.evt.deltaY <= 0;
+            var newScale =
+                iszoomout ? 1 * ZOOM_WHEEL_RATE : 1 / ZOOM_WHEEL_RATE;
+            ZoomByScale(params, newScale);
+        }
     }
 }] as IStageEvent[];

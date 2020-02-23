@@ -8,34 +8,38 @@ export default [
     {
         eventName: "touchmove",
         handle: (params, e: any) => {
-            const { dragNode } = params;
-            e.evt.preventDefault();
-            const touch1 = e.evt.touches[0];
-            const touch2 = e.evt.touches[1];
-            if (touch1 && touch2) {
-                const dist = getDistance(
-                    {
-                        x: touch1.clientX,
-                        y: touch1.clientY
-                    },
-                    {
-                        x: touch2.clientX,
-                        y: touch2.clientY
-                    }
-                );
+            const { dragNode, currentPluginRef } = params;
+            if (currentPluginRef) {
+                return;
+            } else {
+                e.evt.preventDefault();
+                const touch1 = e.evt.touches[0];
+                const touch2 = e.evt.touches[1];
+                if (touch1 && touch2) {
+                    const dist = getDistance(
+                        {
+                            x: touch1.clientX,
+                            y: touch1.clientY
+                        },
+                        {
+                            x: touch2.clientX,
+                            y: touch2.clientY
+                        }
+                    );
 
-                if (!dragNode.lastDist) {
+                    if (!dragNode.lastDist) {
+                        dragNode.lastDist = dist;
+                    }
+                    // 2点间的距离
+                    const scale = dist / dragNode.lastDist;
+                    ZoomByScale(params, scale);
                     dragNode.lastDist = dist;
                 }
-                // 2点间的距离
-                const scale = dist / dragNode.lastDist;
-                ZoomByScale(params, scale);
-                dragNode.lastDist = dist;
             }
         }
     },
     {
-        eventName: 'touch',
+        eventName: 'touchstart',
         handle: (params) => {
             const { dragNode } = params;
             dragNode.lastDist = 0;

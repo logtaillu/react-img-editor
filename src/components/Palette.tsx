@@ -17,6 +17,7 @@ interface PaletteProps {
   getStage?: (stage: any) => void;
   handlePluginChange: (plugin: Plugin) => void;
   stageEvents: string[];
+  active?: boolean;
 }
 
 export default function Palette(props: PaletteProps) {
@@ -43,6 +44,17 @@ export default function Palette(props: PaletteProps) {
   const currentPluginRef = useRef(props.currentPlugin)
   const dragRef = useRef<any>(null);
 
+  function bindStageEvents() {
+    (props.stageEvents || []).map(eventname => {
+      if (defaultStageEvents[eventname]) {
+        const curevents = defaultStageEvents[eventname] || [];
+        curevents.map(curevent => {
+          stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
+        })
+      }
+    });
+  }
+
   function initPalette() {
     stageRef.current = new Konva.Stage({
       container: containerIdRef.current,
@@ -51,14 +63,7 @@ export default function Palette(props: PaletteProps) {
     })
 
     stageRef.current._pixelRatio = pixelRatio;
-    (props.stageEvents || []).map(eventname => {
-      if (defaultStageEvents[eventname]) {
-        const curevents = defaultStageEvents[eventname] || [];
-        curevents.map(curevent=>{
-          stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
-        })
-      }
-    });
+    bindStageEvents();
     props.getStage && props.getStage(stageRef.current)
     if (dragRef && dragRef.current) {
       const dragNode = dragRef.current;
@@ -69,12 +74,15 @@ export default function Palette(props: PaletteProps) {
   }
 
   function generateImageData(imgObj: any, width: number, height: number) {
-    const canvas = document.createElement('canvas')
+    let canvas : any = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
     ctx!.drawImage(imgObj, 0, 0, width, height)
-    return ctx!.getImageData(0, 0, width, height)
+    const data = ctx!.getImageData(0, 0, width, height);
+    canvas.remove();
+    canvas = null;
+    return data;
   }
 
   function drawImage() {
@@ -101,6 +109,7 @@ export default function Palette(props: PaletteProps) {
       stage: stageRef.current,
       imageLayer: imageRef.current,
       layer: layerRef.current,
+      currentPluginRef: currentPluginRef.current,
       paramValue: props.currentPluginParamValue,
       imageData: imageData.current,
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -206,7 +215,8 @@ export default function Palette(props: PaletteProps) {
 
     layerRef.current = new Konva.Layer()
     stageRef.current.add(layerRef.current)
-    bindEvents()
+    bindEvents();
+    bindStageEvents();
   }
 
   useEffect(() => {
@@ -219,6 +229,8 @@ export default function Palette(props: PaletteProps) {
       const currentPlugin = currentPluginRef.current
       // unMount 时清除插件数据
       currentPlugin && currentPlugin.onLeave && currentPlugin.onLeave(getDrawEventPramas(null))
+      stageRef.current.size({ width: 0, height: 0 });
+      stageRef.current.destroy();
     }
   }, [])
 
@@ -226,8 +238,17 @@ export default function Palette(props: PaletteProps) {
     bindEvents()
     return () => {
       removeEvents()
+      bindStageEvents()
     }
   }, [props.imageObj, props.currentPlugin, props.currentPluginParamValue])
+  useEffect(() => {
+    if (!props.active) {
+      if (stageRef && stageRef.current) {
+        stageRef.current.size({ width: 0, height: 0 });
+        stageRef.current.clear();
+      }
+    }
+  }, [props.active]);
 
   useEffect(() => {
     const prevCurrentPlugin = currentPluginRef.current

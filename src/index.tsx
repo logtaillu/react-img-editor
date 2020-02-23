@@ -17,13 +17,22 @@ interface ReactImageEditorProps {
   defaultPluginName?: string;
   stageEvents?: string[];//启用默认的几个stage事件
   closePlugin?: any;
+  active?: boolean;
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null)
   useEffect(() => {
+    if (!props.active) {
+      handlePluginChange({} as any);
+    }
+  }, [props.active]);
+  useEffect(() => {
     if (props.closePlugin) {
       props.closePlugin(handlePluginChange.bind(this, {} as any));
+    }
+    return () => {
+      setImageObj(null);
     }
   }, []);
 
@@ -94,6 +103,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               getStage={props.getStage}
               handlePluginChange={handlePluginChange}
               stageEvents={props.stageEvents || []}
+              active={props.active}
             />
             <Toolbar width={props.width!}
               plugins={plugins!}
@@ -119,4 +129,5 @@ ReactImageEditor.defaultProps = {
   toolbar: {
     items: ['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout'],
   },
+  active: true
 } as Partial<ReactImageEditorProps>

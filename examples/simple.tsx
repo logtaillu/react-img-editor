@@ -17,6 +17,7 @@ function Example() {
       link.download = ''
       link.href = URL.createObjectURL(blob)
       link.click()
+      link.remove();
     }, 'image/jpeg')
   }
 
@@ -33,7 +34,7 @@ function Example() {
         width={800}
         getStage={setStage}
         defaultPluginName=""
-        stageEvents={["zoomOnWheel"]}
+        stageEvents={["zoomOnWheel","zoomOnTouch"]}
         style={{border:"1px solid #ddd"}}
       />
       <div style={{ marginTop: '50px' }}>

@@ -22,20 +22,20 @@ export default class Crop extends Plugin {
 
   // 一直为正数
   getRectWidth = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).width : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).width : 0
   }
 
   // 一直为正数
   getRectHeight = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).height : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).height : 0
   }
 
   getRectX = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).x : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).x : 0
   }
 
   getRectY = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).y : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).y : 0
   }
 
   adjustToolbarPosition = (stage: any) => {
@@ -126,7 +126,7 @@ export default class Crop extends Plugin {
   }
 
   onEnter = (drawEventPramas: DrawEventPramas) => {
-    const {stage} = drawEventPramas
+    const { stage } = drawEventPramas
     stage.container().style.cursor = 'crosshair'
   }
 
@@ -134,7 +134,7 @@ export default class Crop extends Plugin {
     // 当鼠标移出 stage 时，不会触发 mouseup，重新回到 stage 时，会重新触发 onDrawStart，这里就是为了防止重新触发 onDrawStart
     if (this.isPaint) return
 
-    const {stage} = drawEventPramas
+    const { stage } = drawEventPramas
 
     if (document.getElementById(this.toolbarId)) return
     this.isPaint = true
@@ -150,8 +150,8 @@ export default class Crop extends Plugin {
       globalCompositeOperation: 'source-over',
       x: 0,
       y: 0,
-      width: stage.width(),
-      height: stage.height(),
+      width: stage.width() / stage.scale().x,
+      height: stage.height() / stage.scale().y,
       fill: 'rgba(0, 0, 0, .6)',
     })
 
@@ -164,10 +164,10 @@ export default class Crop extends Plugin {
       draggable: true,
       globalCompositeOperation: 'destination-out',
     })
-    this.rect.on('mouseenter', function() {
+    this.rect.on('mouseenter', function () {
       stage.container().style.cursor = 'move'
     })
-    this.rect.on('mouseleave', function() {
+    this.rect.on('mouseleave', function () {
       stage.container().style.cursor = 'default'
     })
 
@@ -180,7 +180,7 @@ export default class Crop extends Plugin {
     if (!this.isPaint) return
     if (document.getElementById(this.toolbarId)) return
 
-    const {stage} = drawEventPramas
+    const { stage } = drawEventPramas
     const endPos = PointUtil.getPointPos(stage);
     // 绘制初始裁剪区域
     this.rect.width(endPos.x - this.getRectX())
@@ -206,14 +206,14 @@ export default class Crop extends Plugin {
       }
 
       this.adjustToolbarPosition(stage)
-      return {x, y}
+      return { x, y }
     })
 
     this.virtualLayer.draw()
   }
 
   onDrawEnd = (drawEventPramas: DrawEventPramas) => {
-    const {stage, pixelRatio, reload} = drawEventPramas
+    const { stage, pixelRatio, reload } = drawEventPramas
 
     if (!this.isPaint) {
       this.isPaint = false
@@ -274,7 +274,7 @@ export default class Crop extends Plugin {
 
 
         this.adjustToolbarPosition(stage)
-        return {x, y, width, height} as any
+        return { x, y, width, height } as any
       },
     })
     this.virtualLayer.add(this.transformer)
@@ -309,7 +309,7 @@ export default class Crop extends Plugin {
   }
 
   onLeave = (drawEventPramas: DrawEventPramas) => {
-    const {stage} = drawEventPramas
+    const { stage } = drawEventPramas
     this.reset(stage)
     stage.container().style.cursor = 'default'
     this.isPaint = false
