@@ -16,8 +16,8 @@ interface ReactImageEditorProps {
   getStage?: (stage: any) => void;
   defaultPluginName?: string;
   stageEvents?: string[];//启用默认的几个stage事件
-  closePlugin?: any;
   active?: boolean;
+  loadingComponent?: any; // 加载中组件
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
@@ -28,9 +28,6 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     }
   }, [props.active]);
   useEffect(() => {
-    if (props.closePlugin) {
-      props.closePlugin(handlePluginChange.bind(this, {} as any));
-    }
     return () => {
       setImageObj(null);
     }
@@ -114,7 +111,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               handlePluginParamValueChange={handlePluginParamValueChange}
             />
           </div>
-        ) : null
+        ) : props.loadingComponent || null
       }
     </div >
   )

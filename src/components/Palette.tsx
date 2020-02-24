@@ -241,6 +241,7 @@ export default function Palette(props: PaletteProps) {
       bindStageEvents()
     }
   }, [props.imageObj, props.currentPlugin, props.currentPluginParamValue])
+  // 临时处理
   useEffect(() => {
     if (!props.active) {
       if (stageRef && stageRef.current) {
