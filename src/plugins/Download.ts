@@ -1,7 +1,6 @@
 
 import { DrawEventPramas } from '../type'
 import Plugin from './Plugin'
-import { blobTest } from "../tools/HelperUitl";
 
 export default class Download extends Plugin {
   name = 'download'
@@ -11,13 +10,17 @@ export default class Download extends Plugin {
   onEnter = (drawEventPramas: DrawEventPramas) => {
     const { stage, pixelRatio } = drawEventPramas
     let canvas = stage.toCanvas({ pixelRatio })
-    blobTest();
     canvas.toBlob(function (blob: any) {
-      const link = document.createElement('a')
-      link.download = "image.jpg";
-      link.href = URL.createObjectURL(blob);
-      link.click()
-      link.remove();
+      // if ('msSaveOrOpenBlob' in navigator) {
+      //   // Microsoft Edge and Microsoft Internet Explorer 10-11
+      //   window.navigator.msSaveOrOpenBlob(blob, "image.jpg");
+      // } else {
+        const link = document.createElement('a')
+        link.download = "image.jpg";
+        link.href = URL.createObjectURL(blob);
+        link.click()
+        link.remove();
+      // }
     }, "image/jpeg");
     canvas = null;
   }
