@@ -4,11 +4,11 @@ import Palette from './components/Palette'
 import React, { useEffect, useState } from 'react'
 import Toolbar from './components/Toolbar'
 import { PluginParamValue } from './type'
-// import "mdn-polyfills/Element.prototype.closest";
-// import "mdn-polyfills/String.prototype.repeat";
-// import "mdn-polyfills/Element.prototype.matches";
-// import "mdn-polyfills/Node.prototype.remove";
-// import "mdn-polyfills/HTMLCanvasElement.prototype.toBlob";
+import "mdn-polyfills/Element.prototype.closest";
+import "mdn-polyfills/String.prototype.repeat";
+import "mdn-polyfills/Element.prototype.matches";
+import "mdn-polyfills/Node.prototype.remove";
+import "mdn-polyfills/HTMLCanvasElement.prototype.toBlob";
 
 interface ReactImageEditorProps {
   width?: number;

@@ -2,6 +2,9 @@
   "name": "react-img-editor",
   "version": "0.1.2",
   "description": "图片编辑器（微信截图编辑 PRO 版）",
+  "config": {
+    "port": 8001
+  },
   "keywords": [
     "react-img-editor",
     "image-editor"
@@ -14,7 +17,7 @@
     "gh-pages": "rc-tools run gh-pages",
     "pub": "rc-tools run update-self && rc-tools run pub",
     "lint": "eslint . --ext .js,jsx,.ts,.tsx",
-    "prepublish": "rc-tools run guard",
+    "prepublish": "rc-tools run compile",
     "compile": "rc-tools run compile"
   },
   "files": [
@@ -42,7 +45,9 @@
     "rc-tools": "^9.5.3"
   },
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
     "konva": "^4.1.2",
+    "mdn-polyfills": "^5.20.0",
     "rc-tooltip": "^4.0.0-alpha.3",
     "react-draggable": "^4.2.0"
   }

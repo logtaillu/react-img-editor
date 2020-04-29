@@ -29,7 +29,7 @@ function Example() {
   return (
     <>
       <ReactImgEditor
-        src={image1}
+        src={"/examples/test.png"}
         plugins={[]}
         width={800}
         getStage={setStage}
