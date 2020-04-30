@@ -14,6 +14,7 @@ export interface DrawEventParams extends EditorContextProps {
   pixelRatio: number;
   pubSub: InstanceType<typeof PubSub>;
   dragNode: any;
+  zoom?: IZoomConfig;
 }
 export type PluginParamName = 'strokeWidth' | 'color' | 'fontSize' | 'lineType'
 export interface PluginParamValue {
@@ -21,4 +22,14 @@ export interface PluginParamValue {
   color?: string;
   fontSize?: number;
   lineType?: 'solid' | 'dash';
+}
+
+export interface IZoomConfig {
+  rate?: number;
+  maxrate?: number;
+  maxsize?: number;
+  minrate?: number;
+  minsize?: number;
+  period?: number;
+  wheelrate?: number;
 }

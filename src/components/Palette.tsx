@@ -2,7 +2,7 @@ import Konva from 'konva'
 import PubSub from '../common/PubSub'
 import React from 'react'
 import { EditorContextProps,  withEditorContext } from './EditorContext'
-import { DrawEventParams } from '../common/type'
+import { DrawEventParams, IZoomConfig } from "../common/type";
 import { prefixCls } from '../common/constants'
 import { uuid } from '../common/utils'
 import { Stage } from 'konva/types/Stage'
@@ -17,6 +17,7 @@ interface PaletteProps extends EditorContextProps {
   getStage?: (stage: any) => void;
   stageEvents: string[];
   active?: boolean;
+  zoom?: IZoomConfig;
 }
 
 class Palette extends React.Component<PaletteProps> {
@@ -78,7 +79,6 @@ class Palette extends React.Component<PaletteProps> {
   componentDidUpdate(prevProps: PaletteProps) {
     const prevCurrentPlugin = prevProps.currentPlugin
     const { currentPlugin } = this.props
-
     // 撤销等操作，点击后会再自动清除当前插件
     if (currentPlugin !== prevCurrentPlugin) {
       if (currentPlugin) {
@@ -92,6 +92,9 @@ class Palette extends React.Component<PaletteProps> {
       if (prevCurrentPlugin && prevCurrentPlugin.onLeave) {
         prevCurrentPlugin.onLeave(this.getDrawEventParams(null))
       }
+    }
+    if (!this.props.active && prevProps.active && this.stage) {
+      this.stage.clear();
     }
   }
 
@@ -183,13 +186,12 @@ class Palette extends React.Component<PaletteProps> {
 
   bindEvents = () => {
     if (!this.stage || !this.drawLayer) return
-
-    const { plugins, currentPlugin, handlePluginChange } = this.props
     this.removeEvents()
     this.stage.add(this.drawLayer)
     this.drawLayer.setZIndex(1)
 
     this.stage.on('click tap', (e: any) => {
+      const { currentPlugin, handlePluginChange, plugins } = this.props;
       if (e.target.name && e.target.name()) {
         const name = e.target.name()
         for (let i = 0; i < plugins.length; i++) {
@@ -213,18 +215,21 @@ class Palette extends React.Component<PaletteProps> {
     })
 
     this.stage.on('mousedown touchstart', (e: any) => {
+      const { currentPlugin } = this.props;
       if (currentPlugin && currentPlugin.onDrawStart) {
         currentPlugin.onDrawStart(this.getDrawEventParams(e))
       }
     })
 
     this.stage.on('mousemove touchmove', (e: any) => {
+      const { currentPlugin } = this.props;
       if (currentPlugin && currentPlugin.onDraw) {
         currentPlugin.onDraw(this.getDrawEventParams(e))
       }
     })
 
     this.stage.on('mouseup touchend', (e: any) => {
+      const { currentPlugin } = this.props;
       if (currentPlugin && currentPlugin.onDrawEnd) {
         currentPlugin.onDrawEnd(this.getDrawEventParams(e))
       }
@@ -270,11 +275,13 @@ class Palette extends React.Component<PaletteProps> {
 
   // 主要用于在马赛克时，进行图片像素处理
   generateImageData = (imgObj: any, width: number, height: number) => {
-    const canvas = document.createElement('canvas')
+    let canvas: any = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
     ctx!.drawImage(imgObj, 0, 0, width, height)
+    canvas.remove();
+    canvas = null;
     return ctx!.getImageData(0, 0, width, height)
   }
 
@@ -302,7 +309,8 @@ class Palette extends React.Component<PaletteProps> {
       handlePluginParamValueChange: props.handlePluginParamValueChange,
       toolbarItemConfig: props.toolbarItemConfig,
       updateToolbarItemConfig: props.updateToolbarItemConfig,
-      dragNode: this.dragRef
+      dragNode: this.dragRef,
+      zoom: props.zoom
     }
 
     return drawEventParams
