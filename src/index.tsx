@@ -3,7 +3,7 @@ import PluginFactory from './plugins/PluginFactory'
 import Palette from './components/Palette'
 import React, { useEffect, useState } from 'react'
 import Toolbar from './components/Toolbar'
-import { PluginParamValue } from './type'
+import { PluginParamValue, IZoomConfig } from './type'
 import "mdn-polyfills/Element.prototype.closest";
 import "mdn-polyfills/String.prototype.repeat";
 import "mdn-polyfills/Element.prototype.matches";
@@ -22,8 +22,9 @@ interface ReactImageEditorProps {
   getStage?: (stage: any) => void;
   defaultPluginName?: string;
   stageEvents?: string[];//启用默认的几个stage事件
-  active?: boolean;
-  loadingComponent?: any; // 加载中组件
+  active?: boolean; // 是否激活，控制销毁
+  loadingComponent?: any; // 加载中状态组件
+  zoom?: IZoomConfig; // 缩放配置
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
@@ -73,7 +74,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
       setCurrentPlugin(null);
     } else {
       setCurrentPlugin(plugin)
-      plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue)
+      plugin && plugin.defalutParamValue && setCurrentPluginParamValue(plugin.defalutParamValue)
       if (!plugin.params) {
         setTimeout(() => {
           setCurrentPlugin(null)
@@ -108,6 +109,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               handlePluginChange={handlePluginChange}
               stageEvents={props.stageEvents || []}
               active={props.active}
+              zoom={props.zoom}
             />
             <Toolbar width={props.width!}
               plugins={plugins!}

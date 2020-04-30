@@ -1,7 +1,7 @@
 import Konva from 'konva'
 import Plugin from '../plugins/Plugin'
 import React, { useEffect, useRef } from 'react'
-import { PluginParamValue, DrawEventPramas } from '../type'
+import { PluginParamValue, DrawEventPramas, IZoomConfig } from '../type'
 import { prefixCls } from '../constants'
 import { uuid } from '../utils'
 import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
@@ -18,6 +18,7 @@ interface PaletteProps {
   handlePluginChange: (plugin: Plugin) => void;
   stageEvents: string[];
   active?: boolean;
+  zoom?: IZoomConfig;
 }
 
 export default function Palette(props: PaletteProps) {
@@ -118,7 +119,8 @@ export default function Palette(props: PaletteProps) {
       pixelRatio,
       event: e,
       plugins: props.plugins,
-      dragNode: dragRef.current
+      dragNode: dragRef.current,
+      zoom: props.zoom
     }
 
     return drawEventPramas

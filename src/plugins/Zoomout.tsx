@@ -1,7 +1,7 @@
 import Plugin from './Plugin';
 import { DrawEventPramas } from '../type';
-import { ZOOM_RATE, ZOOM_MAX } from "../constants";
 import PointUtil from '../tools/PointUtil';
+import ZoomUtil from '../tools/ZoomUtil';
 export default class Zoomout extends Plugin {
     name = "zoomout";
     iconfont = 'iconfont icon-plus';
@@ -10,12 +10,15 @@ export default class Zoomout extends Plugin {
     onEnter = (drawEventPramas: DrawEventPramas) => {
         const { stage, dragNode } = drawEventPramas;
         const oldscale = stage.scaleX();
-        if (!ZOOM_MAX || (oldscale * ZOOM_RATE <= ZOOM_MAX)) {
+        const zoom = ZoomUtil.getZoomConfig(drawEventPramas.zoom);
+        const ratein = !zoom.maxrate || (oldscale * zoom.rate <= zoom.maxrate);
+        const sizein = !zoom.maxsize || (stage.height() * zoom.rate <= zoom.maxsize && stage.width() * zoom.rate <= zoom.maxsize);
+        if (ratein && sizein) {
             const pos = PointUtil.getCenterPos(dragNode);
-            const newscale = oldscale * ZOOM_RATE;
+            const newscale = oldscale * zoom.rate;
             stage.scale({ x: newscale, y: newscale });
             const size = stage.size();
-            stage.size({ width: size.width * ZOOM_RATE, height: size.height * ZOOM_RATE });
+            stage.size({ width: size.width * zoom.rate, height: size.height * zoom.rate });
             stage.batchDraw();
             const newPos = PointUtil.getCenterPos(dragNode);
             dragNode.resetPos({

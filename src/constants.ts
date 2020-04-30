@@ -12,7 +12,8 @@ export const transformerStyle = {
   rotateAnchorOffset: 20,
 }
 
-export const ZOOM_MIN = 0.1;
-export const ZOOM_MAX = 6;
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 2;
 export const ZOOM_RATE = 1.2;
 export const ZOOM_WHEEL_RATE = 1.1;
+export const ZOOM_PERIOD = 0;
