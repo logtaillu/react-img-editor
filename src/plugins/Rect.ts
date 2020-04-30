@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventParams, PluginParamName, PluginParamValue } from '../common/type'
 import { transformerStyle } from '../common/constants'
 import { uuid } from '../common/utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Rect extends Plugin {
   name = 'rect'
@@ -103,7 +104,7 @@ export default class Rect extends Plugin {
 
   onDraw = (drawEventParams: DrawEventParams) => {
     const {stage, drawLayer, paramValue, pubSub} = drawEventParams
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
 
     if (!this.isPaint || this.transformer || !pos) return
 
@@ -130,7 +131,6 @@ export default class Rect extends Plugin {
       drawLayer.add(this.lastRect)
       this.started = true
     }
-
     this.lastRect.width(pos.x - this.startPoint[0])
     this.lastRect.height(pos.y - this.startPoint[1])
     drawLayer.batchDraw()

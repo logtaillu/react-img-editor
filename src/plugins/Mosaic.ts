@@ -3,6 +3,7 @@ import Konva from 'konva'
 import Plugin from './Plugin'
 import { DrawEventParams, PluginParamValue, PluginParamName } from '../common/type'
 import { uuid } from '../common/utils'
+import PointUtil from '../tools/PointUtil'
 
 const tileHeight = 5
 const tileWidth = 5
@@ -136,7 +137,7 @@ export default class Mosaic extends Plugin {
 
   onDraw = (drawEventParams: DrawEventParams) => {
     const {stage, drawLayer, paramValue} = drawEventParams
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
     if (!this.isPaint || !pos) return
 
     const strokeWidth = (paramValue && paramValue.strokeWidth) ? paramValue.strokeWidth : this.defaultParamValue.strokeWidth

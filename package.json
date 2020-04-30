@@ -2,6 +2,9 @@
   "name": "react-img-editor",
   "version": "0.2.0",
   "description": "图片编辑器（微信截图编辑 PRO 版）",
+  "config": {
+    "port": 8001
+  },
   "keywords": [
     "react-img-editor",
     "image-editor"
@@ -14,7 +17,8 @@
     "gh-pages": "rc-tools run gh-pages",
     "pub": "rc-tools run update-self && rc-tools run pub",
     "lint": "eslint . --ext .js,jsx,.ts,.tsx",
-    "prepublish": "rc-tools run guard"
+    "prepublish": "rc-tools run compile",
+    "compile": "rc-tools run compile"
   },
   "files": [
     "es",
@@ -23,14 +27,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YaoKaiLun/react-img-editor.git"
+    "url": "git+https://github.com/logtaillu/react-img-editor.git"
   },
-  "author": "kailunyao",
+  "author": "logtaillu",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/YaoKaiLun/react-img-editor/issues"
+    "url": "https://github.com/logtaillu/react-img-editor/issues"
   },
-  "homepage": "https://github.com/YaoKaiLun/react-img-editor#readme",
+  "homepage": "https://github.com/logtaillu/react-img-editor#readme",
   "devDependencies": {
     "@types/pubsub-js": "^1.5.18",
     "@types/react-dom": "^16.9.5",
@@ -43,8 +47,11 @@
     "rc-tools": "^9.6.1"
   },
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
     "konva": "^4.1.2",
     "pubsub-js": "^1.8.0",
-    "rc-tooltip": "^4.0.0-alpha.3"
+    "mdn-polyfills": "^5.20.0",
+    "rc-tooltip": "^4.0.0-alpha.3",
+    "react-draggable": "^4.2.0"
   }
 }

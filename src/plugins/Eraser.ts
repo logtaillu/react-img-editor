@@ -2,7 +2,7 @@ import Konva from 'konva'
 import Plugin from './Plugin'
 import { DrawEventParams, PluginParamName, PluginParamValue } from '../common/type'
 import { uuid } from '../common/utils'
-
+import PointUtil from '../tools/PointUtil'
 export default class Eraser extends Plugin {
   name = 'eraser'
   iconfont = 'iconfont icon-eraser'
@@ -17,7 +17,7 @@ export default class Eraser extends Plugin {
 
   onDrawStart = (drawEventParams: DrawEventParams) => {
     const {stage, drawLayer, paramValue} = drawEventParams
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
 
     if (!pos) return
 
@@ -34,7 +34,7 @@ export default class Eraser extends Plugin {
 
   onDraw = (drawEventParams: DrawEventParams) => {
     const {stage, drawLayer} = drawEventParams
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
 
     if (!this.isPaint || !pos) return
 

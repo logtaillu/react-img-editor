@@ -45,7 +45,8 @@ module.exports = {
     '@typescript-eslint/interface-name-prefix': 0,
     '@typescript-eslint/no-use-before-define': 0,
     "react-hooks/rules-of-hooks": 'error',
-    "react-hooks/exhaustive-deps": 'warn'
+    "react-hooks/exhaustive-deps": 'warn',
+    "@typescript-eslint/no-implicit-any": 1
   },
   overrides: [
     {

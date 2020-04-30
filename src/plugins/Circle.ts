@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventParams, PluginParamName, PluginParamValue } from '../common/type'
 import { transformerStyle } from '../common/constants'
 import { uuid } from '../common/utils'
+import PointUtil from '../tools/PointUtil'
 
 export default class Circle extends Plugin {
   name = 'circle'
@@ -103,7 +104,7 @@ export default class Circle extends Plugin {
 
   onDraw = (drawEventParams: DrawEventParams) => {
     const {stage, drawLayer, paramValue, pubSub} = drawEventParams
-    const pos = stage.getPointerPosition()
+    const pos = PointUtil.getPointPos(stage);
 
     if (!this.isPaint || this.transformer || !pos) return
 

@@ -8,6 +8,10 @@ import Pen from './Pen'
 import Rect from './Rect'
 import Repeal from './Repeal'
 import Text from './Text'
+import Rotate from "./Rotate";
+import Zoomin from "./Zoomin";
+import Zoomout from "./Zoomout";
+import Line from "./Line";
 
 export default class PluginFactory {
   plugins = [
@@ -21,5 +25,9 @@ export default class PluginFactory {
     new Rect(),
     new Repeal(),
     new Text(),
+    new Rotate(),
+    new Zoomin(),
+    new Zoomout(),
+    new Line()
   ]
 }

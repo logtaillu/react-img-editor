@@ -5,6 +5,11 @@ import React, { useEffect, useState } from 'react'
 import Toolbar from './components/Toolbar'
 import { PluginParamValue } from './common/type'
 import { EditorContext } from './components/EditorContext'
+import "mdn-polyfills/Element.prototype.closest";
+import "mdn-polyfills/String.prototype.repeat";
+import "mdn-polyfills/Element.prototype.matches";
+import "mdn-polyfills/Node.prototype.remove";
+import "mdn-polyfills/HTMLCanvasElement.prototype.toBlob";
 
 interface ReactImageEditorProps {
   width?: number;
@@ -18,17 +23,30 @@ interface ReactImageEditorProps {
   getStage?: (stage: any) => void;
   defaultPluginName?: string;
   crossOrigin?: string;
+  stageEvents?: string[];//启用默认的几个stage事件
+  active?: boolean; // 是否激活，控制销毁
+  loadingComponent?: any; // 加载中状态组件
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null)
+  useEffect(() => {
+    if (!props.active) {
+      handlePluginChange({} as any);
+    }
+  }, [props.active]);
+  useEffect(() => {
+    return () => {
+      setImageObj(null);
+    }
+  }, []);
 
 
   const pluginFactory = new PluginFactory()
   const plugins = [...pluginFactory.plugins, ...props.plugins!]
   let defaultPlugin = null
   let defaultParamValue = {}
-  for(let i = 0; i < plugins.length; i++) {
+  for (let i = 0; i < plugins.length; i++) {
     if (props.defaultPluginName && props.toolbar && plugins[i].name === props.defaultPluginName) {
       defaultPlugin = plugins[i]
 
@@ -62,17 +80,22 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     }
     if (props.crossOrigin !== undefined) {
       image.crossOrigin = props.crossOrigin
+      image.setAttribute("crossOrigin", props.crossOrigin);
     }
     image.src = props.src
   }, [props.src, props.crossOrigin])
 
   function handlePluginChange(plugin: Plugin) {
-    setCurrentPlugin(plugin)
-    plugin.defaultParamValue && setParamValue(plugin.defaultParamValue)
-    if (!plugin.params) {
-      setTimeout(() => {
-        setCurrentPlugin(null)
-      })
+    if (currentPlugin && plugin.name === currentPlugin.name) {
+      setCurrentPlugin(null);
+    } else {
+      setCurrentPlugin(plugin)
+      plugin.defaultParamValue && setParamValue(plugin.defaultParamValue)
+      if (!plugin.params) {
+        setTimeout(() => {
+          setCurrentPlugin(null)
+        })
+      }
     }
   }
 
@@ -113,10 +136,12 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
                 height={props.height! - 42}
                 imageObj={imageObj}
                 getStage={props.getStage}
+                stageEvents={props.stageEvents || []}
+                active={props.active}
               />
               <Toolbar />
             </>
-          ) : null
+          ) : props.loadingComponent || null
         }
       </div>
     </EditorContext.Provider>
@@ -128,7 +153,9 @@ ReactImageEditor.defaultProps = {
   height: 500,
   style: {},
   plugins: [],
+  stageEvents: [],
   toolbar: {
     items: ['pen', 'eraser', 'arrow', 'rect', 'circle', 'mosaic', 'text', '|', 'repeal', 'download', 'crop'],
   },
+  active: true
 } as Partial<ReactImageEditorProps>

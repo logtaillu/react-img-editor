@@ -3,6 +3,7 @@ import Plugin from './Plugin'
 import { DrawEventParams } from '../common/type'
 import { transformerStyle } from '../common/constants'
 import { uuid } from '../common/utils'
+import PointUtil from '../tools/PointUtil'
 
 const toolbarWidth = 275
 const toolbarHeight = 40
@@ -21,20 +22,20 @@ export default class Crop extends Plugin {
 
   // 一直为正数
   getRectWidth = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).width : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).width : 0
   }
 
   // 一直为正数
   getRectHeight = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).height : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).height : 0
   }
 
   getRectX = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).x : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).x : 0
   }
 
   getRectY = () => {
-    return this.rect ? this.rect.getClientRect({skipTransform: false}).y : 0
+    return this.rect ? this.rect.getClientRect({ skipTransform: false }).y : 0
   }
 
   adjustToolbarPosition = (stage: any) => {
@@ -131,7 +132,7 @@ export default class Crop extends Plugin {
 
   onDrawStart = (drawEventParams: DrawEventParams) => {
     const {stage} = drawEventParams
-    const startPos = stage.getPointerPosition()
+    const startPos = PointUtil.getPointPos(stage);
     // 当鼠标移出 stage 时，不会触发 mouseup，重新回到 stage 时，会重新触发 onDrawStart，这里就是为了防止重新触发 onDrawStart
     if (this.isPaint || !startPos) return
 
@@ -147,8 +148,8 @@ export default class Crop extends Plugin {
       globalCompositeOperation: 'source-over',
       x: 0,
       y: 0,
-      width: stage.width(),
-      height: stage.height(),
+      width: stage.width() / stage.scale().x,
+      height: stage.height() / stage.scale().y,
       fill: 'rgba(0, 0, 0, .6)',
     })
 
@@ -161,10 +162,10 @@ export default class Crop extends Plugin {
       draggable: true,
       globalCompositeOperation: 'destination-out',
     })
-    this.rect.on('mouseenter', function() {
+    this.rect.on('mouseenter', function () {
       stage.container().style.cursor = 'move'
     })
-    this.rect.on('mouseleave', function() {
+    this.rect.on('mouseleave', function () {
       stage.container().style.cursor = 'default'
     })
 
@@ -175,7 +176,7 @@ export default class Crop extends Plugin {
 
   onDraw = (drawEventParams: DrawEventParams) => {
     const {stage} = drawEventParams
-    const endPos = stage.getPointerPosition()
+    const endPos = PointUtil.getPointPos(stage);
 
     if (!this.isPaint || !endPos) return
     if (document.getElementById(this.toolbarId)) return
@@ -204,7 +205,7 @@ export default class Crop extends Plugin {
       }
 
       this.adjustToolbarPosition(stage)
-      return {x, y}
+      return { x, y }
     })
 
     this.virtualLayer.draw()
@@ -272,7 +273,7 @@ export default class Crop extends Plugin {
 
 
         this.adjustToolbarPosition(stage)
-        return {x, y, width, height} as any
+        return { x, y, width, height } as any
       },
     })
     this.virtualLayer.add(this.transformer)

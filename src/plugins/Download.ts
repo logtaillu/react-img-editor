@@ -8,15 +8,21 @@ export default class Download extends Plugin {
   title = '下载图片'
 
   onEnter = (drawEventParams: DrawEventParams) => {
-    const {stage, pixelRatio} = drawEventParams
+    const { stage, pixelRatio } = drawEventParams
     // 延迟下载，等触发 plugin 的 onLeave 生命周期，清除未完成的现场
     setTimeout(() => {
       const canvas = stage.toCanvas({ pixelRatio })
-      canvas.toBlob(function(blob: any) {
+      canvas.toBlob(function (blob: any) {
+        // if ('msSaveOrOpenBlob' in navigator) {
+        //   // Microsoft Edge and Microsoft Internet Explorer 10-11
+        //   window.navigator.msSaveOrOpenBlob(blob, "image.jpg");
+        // } else {
         const link = document.createElement('a')
-        link.download = ''
+        link.download = 'image.jpg'
         link.href = URL.createObjectURL(blob)
         link.click()
+        link.remove();
+        // }
       }, 'image/jpeg')
     }, 100)
   }

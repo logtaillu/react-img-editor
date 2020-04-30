@@ -7,11 +7,16 @@ import { prefixCls } from '../common/constants'
 import { uuid } from '../common/utils'
 import { Stage } from 'konva/types/Stage'
 import { Layer } from 'konva/types/Layer'
+import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
+import DragWrapper from './DragWrapper'
+import PointUtil from '../tools/PointUtil'
 
 interface PaletteProps extends EditorContextProps {
   height: number;
   imageObj: HTMLImageElement;
   getStage?: (stage: any) => void;
+  stageEvents: string[];
+  active?: boolean;
 }
 
 class Palette extends React.Component<PaletteProps> {
@@ -25,6 +30,7 @@ class Palette extends React.Component<PaletteProps> {
   imageData: ImageData | null = null
   historyStack: any[] = []
   pubSub: InstanceType<typeof PubSub>
+  dragRef: any = null;
 
   constructor(props: PaletteProps) {
     super(props)
@@ -45,6 +51,17 @@ class Palette extends React.Component<PaletteProps> {
 
     this.pubSub = new PubSub(this.containerId)
     this.subHistoryStack()
+  }
+
+  bindStageEvents() {
+    (this.props.stageEvents || []).map(eventname => {
+      if (defaultStageEvents[eventname]) {
+        const curevents = defaultStageEvents[eventname] || [];
+        curevents.map(curevent => {
+          this.stage.on(curevent.eventName, (e: any) => curevent.handle(this.getDrawEventParams(e), e));
+        })
+      }
+    });
   }
 
   componentDidMount() {
@@ -79,6 +96,7 @@ class Palette extends React.Component<PaletteProps> {
   componentWillUnmount() {
     const { currentPlugin } = this.props
     currentPlugin && currentPlugin.onLeave && currentPlugin.onLeave(this.getDrawEventParams(null))
+    this.stage.destroy();
   }
 
   init = () => {
@@ -89,9 +107,12 @@ class Palette extends React.Component<PaletteProps> {
       width: this.canvasWidth,
       height: this.canvasHeight,
     })
-
     getStage && getStage(this.resetStage(this.stage!))
+    if (this.dragRef) {
+      const center = PointUtil.getCenterPos(this.dragRef);
 
+      this.dragRef.setPos({ x: center.x, y: center.y });
+    }
     const img = new Konva.Image({
       x: 0,
       y: 0,
@@ -206,6 +227,7 @@ class Palette extends React.Component<PaletteProps> {
         currentPlugin.onDrawEnd(this.getDrawEventParams(e))
       }
     })
+    this.bindStageEvents();
   }
 
   removeEvents = () => {
@@ -278,6 +300,7 @@ class Palette extends React.Component<PaletteProps> {
       handlePluginParamValueChange: props.handlePluginParamValueChange,
       toolbarItemConfig: props.toolbarItemConfig,
       updateToolbarItemConfig: props.updateToolbarItemConfig,
+      dragNode: this.dragRef
     }
 
     return drawEventParams
@@ -292,8 +315,12 @@ class Palette extends React.Component<PaletteProps> {
     }
 
     return (
-      <div className={`${prefixCls}-palette`} style={style}>
-        <div id={this.containerId} className={`${prefixCls}-container`} />
+      <div className="offset-bound" style={style}>
+        <DragWrapper ref={node => this.dragRef = node} disabled={!!this.props.currentPlugin}>
+          <div className={`${prefixCls}-palette`}>
+            <div id={this.containerId} className={`${prefixCls}-container`} />
+          </div>
+        </DragWrapper>
       </div>
     )
   }

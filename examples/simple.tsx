@@ -17,24 +17,27 @@ function Example() {
       link.download = ''
       link.href = URL.createObjectURL(blob)
       link.click()
+      link.remove();
     }, 'image/jpeg')
   }
 
   const image1 = 'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'
-  // const image2 = 'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'
+  const image2 = 'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'
   // const image3 = 'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'
   // const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'
 
   return (
     <>
       <ReactImgEditor
-        src={image1}
-        width={736}
-        height={414}
+        src={"/examples/test.png"}
         plugins={[]}
+        width={800}
         getStage={setStage}
-        defaultPluginName="text"
         crossOrigin="anonymous"
+        defaultPluginName=""
+        stageEvents={["zoomOnWheel","zoomOnTouch"]}
+        style={{border:"1px solid #ddd"}}
+        items={['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout']}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>
