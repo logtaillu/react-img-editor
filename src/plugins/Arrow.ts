@@ -121,7 +121,7 @@ export default class Arrow extends Plugin {
         dashEnabled: !!(paramValue && paramValue.lineType && paramValue.lineType === 'dash'),
         dash: [8],
         fill: strokeColor,
-        strokeScaleEnabled: false,
+        strokeScaleEnabled: true,
       })
       this.lastArrow.on('transformend', function() {
         historyStack.push(this.toObject())

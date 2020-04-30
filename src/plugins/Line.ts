@@ -121,7 +121,7 @@ export default class Line extends Plugin {
         dashEnabled: !!(paramValue && paramValue.lineType && paramValue.lineType === 'dash'),
         dash: [8],
         fill: strokeColor,
-        strokeScaleEnabled: false,
+        strokeScaleEnabled: true,
       })
       this.lastLine.on('transformend', function () {
         historyStack.push(this.toObject())
