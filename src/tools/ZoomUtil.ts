@@ -8,6 +8,7 @@ function getZoomConfig(zoom?: IZoomConfig): {
     minsize: number;
     period: number;
     wheelrate: number;
+    innerzoom: boolean;
 } {
     const res: any = {};
     const defaultval = {
@@ -17,7 +18,8 @@ function getZoomConfig(zoom?: IZoomConfig): {
         minrate: ZOOM_MIN,
         maxsize: 0,
         minsize: 0,
-        wheelrate: ZOOM_WHEEL_RATE
+        wheelrate: ZOOM_WHEEL_RATE,
+        innerzoom: false
     };
     Object.keys(defaultval).map(key => {
         const val = zoom && zoom[key];

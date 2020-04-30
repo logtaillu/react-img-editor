@@ -7,6 +7,8 @@ import { uuid } from '../utils'
 import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
 import DragWrapper from './DragWrapper'
 import PointUtil from '../tools/PointUtil'
+import ZoomUtil from '../tools/ZoomUtil'
+import { isNum } from "../tools/HelperUitl";
 interface PaletteProps {
   width: number;
   height: number;
@@ -57,16 +59,56 @@ export default function Palette(props: PaletteProps) {
   }
 
   function initPalette() {
+    const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
     stageRef.current = new Konva.Stage({
       container: containerIdRef.current,
       width: canvasWidth,
       height: canvasHeight,
+      draggable: zoomconfig.innerzoom,
+      // 限制在四边内
+      dragBoundFunc: zoomconfig.innerzoom ? pos => {
+        const stage = stageRef && stageRef.current;
+        const { x, y } = pos;
+        if (!stage) {
+          return {
+            x: Math.max(x, 0),
+            y: Math.max(y, 0)
+          }
+        }
+        /**@todo 根据渲旋转size和定位点会不同 */
+        // 边界
+        const rotation = stage.rotation();
+        let size = {
+          height: stage.height() * stage.scaleY(),
+          width: stage.width() * stage.scaleX()
+        }
+        const bounds = [
+          { top: 0, bottom: stage.height() - size.height, left: 0, right: stage.width() - size.width },
+          { top: 0, bottom: stage.height() - size.width, left: stage.width(), right: size.height },
+          { top: size.height, bottom: stage.height(), left: stage.width(), right: size.width },
+          { top: size.width, bottom: stage.height(), left: 0, right: stage.width() - size.height }
+        ];
+        const bound = bounds[rotation / 90];
+        const getNewPos = (val: number, boda: number, bodb: number) => {
+          if (isNum(boda) && isNum(bodb)) {
+            const min = Math.min(boda, bodb);
+            const max = Math.max(boda, bodb);
+            return Math.max(min, Math.min(val, max));
+          } else {
+            return val;
+          }
+        }
+        return {
+          x: getNewPos(x, bound.left, bound.right),
+          y: getNewPos(y, bound.top, bound.bottom)
+        };
+      } : null
     })
 
     stageRef.current._pixelRatio = pixelRatio;
     bindStageEvents();
     props.getStage && props.getStage(stageRef.current)
-    if (dragRef && dragRef.current) {
+    if (dragRef && dragRef.current && !zoomconfig.innerzoom) {
       const dragNode = dragRef.current;
       const center = PointUtil.getCenterPos(dragNode);
 
@@ -75,7 +117,7 @@ export default function Palette(props: PaletteProps) {
   }
 
   function generateImageData(imgObj: any, width: number, height: number) {
-    let canvas : any = document.createElement('canvas')
+    let canvas: any = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
@@ -269,10 +311,11 @@ export default function Palette(props: PaletteProps) {
 
     currentPluginRef.current = props.currentPlugin
   }, [props.currentPlugin])
-
+  const config = ZoomUtil.getZoomConfig(props.zoom);
+  // innerzoom时不使用draggable,disable掉
   return (
     <div className="offset-bound" style={style}>
-      <DragWrapper ref={node => dragRef.current = node} disabled={!!props.currentPlugin}>
+      <DragWrapper ref={node => dragRef.current = node} disabled={(!!props.currentPlugin) || config.innerzoom}>
         <div className={`${prefixCls}-palette`}>
           <div id={containerIdRef.current} className={`${prefixCls}-container`} />
         </div>

@@ -17,5 +17,11 @@ export default {
             y: (bounds.top + bounds.bottom) / 2
         }
         return pos;
+    },
+    getInnerCenter(stage: any) {
+        return {
+            x: stage.width() / 2 + stage.x(),
+            y: stage.height() / 2 + stage.y()
+        }
     }
 }

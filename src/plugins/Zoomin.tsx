@@ -2,29 +2,14 @@ import Plugin from './Plugin';
 import { DrawEventPramas } from '../type';
 import PointUtil from '../tools/PointUtil';
 import ZoomUtil from '../tools/ZoomUtil';
+import { ZoomByScale } from "../tools/stageEvents/ZoomOnWheel";
 export default class Zoomin extends Plugin {
     name = "zoomin";
     iconfont = 'iconfont icon-minus';
     title = '缩小';
 
     onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { stage, dragNode } = drawEventPramas;
-        const oldscale = stage.scaleX();
         const zoom = ZoomUtil.getZoomConfig(drawEventPramas.zoom);
-        const ratein = !zoom.minrate || (oldscale / zoom.rate >= zoom.minrate);
-        const sizein = !zoom.minsize || (stage.height() / zoom.rate >= zoom.minsize && stage.width() / zoom.rate >= zoom.minsize);
-        if ( ratein && sizein) {
-            const pos = PointUtil.getCenterPos(dragNode);
-            const newscale = oldscale / zoom.rate;
-            stage.scale({ x: newscale, y: newscale });
-            const size = stage.size();
-            stage.size({ width: size.width / zoom.rate, height: size.height / zoom.rate });
-            stage.batchDraw();
-            const newPos = PointUtil.getCenterPos(dragNode);
-            dragNode.resetPos({
-                x: newPos.x - pos.x,
-                y: newPos.y - pos.y
-            }, true);
-        }
+        ZoomByScale(drawEventPramas, 1/zoom.rate, true);
     }
 }

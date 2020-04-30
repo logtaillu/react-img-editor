@@ -35,7 +35,8 @@ function Example() {
         getStage={setStage}
         defaultPluginName=""
         stageEvents={["zoomOnWheel","zoomOnTouch"]}
-        style={{border:"1px solid #ddd"}}
+        style={{ border: "1px solid #ddd" }}
+        zoom={{innerzoom:true}}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>

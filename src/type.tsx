@@ -31,4 +31,5 @@ export interface IZoomConfig {
   minsize?: number;
   period?: number;
   wheelrate?: number;
+  innerzoom?: boolean;
 }

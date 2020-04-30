@@ -2,27 +2,41 @@ import { IStageEvent } from "./IStageEvent";
 import PointUtil from "../PointUtil";
 import { DrawEventPramas } from "../../type";
 import ZoomUtil from "../ZoomUtil";
-export function ZoomByScale({ stage, dragNode,zoom }: DrawEventPramas, newScale: number) {
+export function ZoomByScale(params: DrawEventPramas, newScale: number, isCenter = false) {
+    if (ZoomUtil.getZoomConfig(params.zoom).innerzoom) {
+        ZoomInner(params, newScale, isCenter);
+    } else {
+        ZoomOutter(params, newScale, isCenter);
+    }
+}
+
+function canScale(params, nowscale) {
+    const { zoom, stage } = params;
+    const zoomconf = ZoomUtil.getZoomConfig(zoom);
+    const ratein = !zoomconf.minrate || (nowscale >= zoomconf.minrate);
+    const sizein = !zoomconf.minsize || (stage.height() * nowscale >= zoomconf.minsize && stage.width() * nowscale >= zoomconf.minsize);
+    const ratemax = !zoomconf.maxrate || (nowscale <= zoomconf.maxrate);
+    const sizemax = !zoomconf.maxsize || (stage.height() * nowscale <= zoomconf.maxsize && stage.width() * nowscale <= zoomconf.maxsize);
+    const inmax = ratemax && sizemax;
+    const inmin = ratein && sizein;
+    return inmax && inmin;
+}
+
+export function ZoomOutter(params: DrawEventPramas, newScale: number, isCenter = false) {
+    const { stage, dragNode, } = params;
     if (!stage) {
         return;
     }
     const iszoomout = newScale >= 1;
     const oldScale = stage.scaleX();
     const nowscale = newScale * oldScale;
-    // 无视scale的点在stage内的位置
-    const oldpointpos = {
-        x: (stage.getPointerPosition().x - stage.width() / 2),
-        y: (stage.getPointerPosition().y - stage.height() / 2),
-    };
-    const center = PointUtil.getCenterPos(dragNode);
-    const zoomconf = ZoomUtil.getZoomConfig(zoom);
-    const ratein = !zoomconf.minrate || (nowscale >= zoomconf.minrate);
-    const sizein = !zoomconf.minsize || (stage.height() * newScale >= zoomconf.minsize && stage.width() * newScale >= zoomconf.minsize);
-    const ratemax = !zoomconf.maxrate || (nowscale <= zoomconf.maxrate);
-    const sizemax = !zoomconf.maxsize || (stage.height() * newScale <= zoomconf.maxsize && stage.width() * newScale <= zoomconf.maxsize);
-    const inmax = ratemax && sizemax;
-    const inmin = ratein && sizein;
-    if (inmax && inmin) {
+    if (canScale(params, nowscale)) {
+        // 无视scale的点在stage内的位置
+        const oldpointpos = isCenter ? { x: 0, y: 0 } : {
+            x: (stage.getPointerPosition().x - stage.width() / 2),
+            y: (stage.getPointerPosition().y - stage.height() / 2),
+        };
+        const center = PointUtil.getCenterPos(dragNode);
         stage.scale({ x: newScale * oldScale, y: newScale * oldScale });
         const size = stage.size();
         stage.size({ width: size.width * newScale, height: size.height * newScale });
@@ -40,6 +54,27 @@ export function ZoomByScale({ stage, dragNode,zoom }: DrawEventPramas, newScale:
         }, !iszoomout);
     }
 }
+
+export function ZoomInner(params: DrawEventPramas, newScale: number, isCenter = false) {
+    const { stage } = params;
+    const oldScale = stage.scaleX();
+    const pointer = isCenter ? PointUtil.getInnerCenter(stage) : stage.getPointerPosition();
+    newScale = newScale * oldScale;
+    if (canScale(params, newScale)) {
+        const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale,
+        };
+        stage.scale({ x: newScale, y: newScale });
+        const newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+        };
+        stage.position(newPos);
+        stage.batchDraw();
+    }
+}
+
 export default [{
     eventName: "wheel",
     handle: (params, e) => {
