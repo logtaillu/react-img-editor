@@ -1,5 +1,5 @@
 import Plugin from './Plugin';
-import { DrawEventPramas } from '../type';
+import { DrawEventParams } from '../common/type';
 import PointUtil from '../tools/PointUtil';
 export default class Rotate extends Plugin {
     name = "rotate";
@@ -24,18 +24,22 @@ export default class Rotate extends Plugin {
         }
     }
 
-    onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { layer, imageLayer, stage, dragNode } = drawEventPramas;
+    onEnter = (DrawEventParams: DrawEventParams) => {
+        const { drawLayer, imageLayer, stage, dragNode } = DrawEventParams;
         const { height, width } = stage.size();
         const pos = PointUtil.getCenterPos(dragNode);
         const scale = stage.scale();
         stage.setSize({ width: height, height: width });
         const childs = imageLayer.getChildren();
-        childs.map((child: any) => this.rotate(child, height, width, scale));
-        const otherchilds = layer.getChildren();
-        otherchilds.map((child: any) => this.rotate(child, height, width, scale));
+        for (let i = 0; i < childs.length; i++){
+            this.rotate(childs[i], height, width, scale);
+        }
+        const otherchilds = drawLayer.getChildren();
+        for (let i = 0; i < otherchilds.length; i++){
+            this.rotate(otherchilds[i], height, width, scale);
+        }
         imageLayer.draw();
-        layer.draw();
+        drawLayer.draw();
         const newPos = PointUtil.getCenterPos(dragNode);
         dragNode.resetPos({
             x: newPos.x - pos.x,

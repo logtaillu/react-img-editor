@@ -1,8 +1,8 @@
 import Konva from 'konva'
 import Plugin from './Plugin'
-import { DrawEventPramas, PluginParamName, PluginParamValue } from '../type'
-import { transformerStyle } from '../constants'
-import { uuid } from '../utils'
+import { DrawEventParams, PluginParamName, PluginParamValue } from '../common/type'
+import { transformerStyle } from '../common/constants'
+import { uuid } from '../common/utils'
 import PointUtil from '../tools/PointUtil'
 
 export default class Line extends Plugin {
@@ -24,12 +24,12 @@ export default class Line extends Plugin {
   started = false
   startPoints = [0, 0]
 
-  enableTransform = (drawEventPramas: DrawEventPramas, node: any) => {
-    const { stage, layer } = drawEventPramas
+  enableTransform = (DrawEventParams: DrawEventParams, node: any) => {
+    const { stage, drawLayer } = DrawEventParams
 
     if (!this.transformer) {
       this.transformer = new Konva.Transformer({ ...transformerStyle, rotateEnabled: true })
-      layer.add(this.transformer)
+      drawLayer.add(this.transformer)
       this.transformer.attachTo(node)
       node.on('mouseenter', function () {
         stage.container().style.cursor = 'move'
@@ -41,11 +41,11 @@ export default class Line extends Plugin {
     }
 
     node && node.draggable(true)
-    layer.draw()
+    drawLayer.draw()
   }
 
-  disableTransform = (drawEventPramas: DrawEventPramas, node: any, remove?: boolean) => {
-    const { stage, layer, historyStack } = drawEventPramas
+  disableTransform = (DrawEventParams: DrawEventParams, node: any, remove?: boolean) => {
+    const { stage, drawLayer, historyStack } = DrawEventParams
 
     if (this.transformer) {
       this.transformer.remove()
@@ -67,34 +67,34 @@ export default class Line extends Plugin {
     }
 
     this.selectedNode = null
-    layer.draw()
+    drawLayer.draw()
   }
 
-  onEnter = (drawEventPramas: DrawEventPramas) => {
-    const { stage, layer } = drawEventPramas
+  onEnter = (DrawEventParams: DrawEventParams) => {
+    const { stage, drawLayer } = DrawEventParams
     const container = stage.container()
     container.tabIndex = 1 // make it focusable
     container.focus()
     container.addEventListener('keyup', (e: any) => {
       if (e.key === 'Backspace' && this.selectedNode) {
-        this.disableTransform(drawEventPramas, this.selectedNode, true)
-        layer.draw()
+        this.disableTransform(DrawEventParams, this.selectedNode, true)
+        drawLayer.draw()
       }
     })
   }
 
-  onClick = (drawEventPramas: DrawEventPramas) => {
-    const { event } = drawEventPramas
+  onClick = (DrawEventParams: DrawEventParams) => {
+    const { event } = DrawEventParams
 
     if (event.target.name && event.target.name() === 'line') {
       // 之前没有选中节点或者在相同节点之间切换点击
       if (!this.selectedNode || this.selectedNode._id !== event.target._id) {
-        this.selectedNode && this.disableTransform(drawEventPramas, this.selectedNode)
-        this.enableTransform(drawEventPramas, event.target)
+        this.selectedNode && this.disableTransform(DrawEventParams, this.selectedNode)
+        this.enableTransform(DrawEventParams, event.target)
         this.selectedNode = event.target
       }
     } else {
-      this.disableTransform(drawEventPramas, this.selectedNode)
+      this.disableTransform(DrawEventParams, this.selectedNode)
     }
   }
 
@@ -102,8 +102,8 @@ export default class Line extends Plugin {
     this.isPaint = true
   }
 
-  onDraw = (drawEventPramas: DrawEventPramas) => {
-    const { stage, layer, paramValue, historyStack } = drawEventPramas
+  onDraw = (DrawEventParams: DrawEventParams) => {
+    const { stage, drawLayer, paramValue, historyStack } = DrawEventParams
 
     if (!this.isPaint || this.transformer) return
 
@@ -129,20 +129,20 @@ export default class Line extends Plugin {
       this.lastLine.on('dragend', function () {
         historyStack.push(this.toObject())
       })
-      layer.add(this.lastLine)
+      drawLayer.add(this.lastLine)
       this.started = true
     }
 
     const pos = PointUtil.getPointPos(stage);
     this.lastLine.points([this.startPoints[0], this.startPoints[1], pos.x, pos.y])
-    layer.batchDraw()
+    drawLayer.batchDraw()
   }
 
-  onDrawEnd = (drawEventPramas: DrawEventPramas) => {
-    const { historyStack } = drawEventPramas
+  onDrawEnd = (DrawEventParams: DrawEventParams) => {
+    const { historyStack } = DrawEventParams
     // mouseup event is triggered by move event but click event
     if (this.started) {
-      this.disableTransform(drawEventPramas, this.selectedNode)
+      this.disableTransform(DrawEventParams, this.selectedNode)
       if (this.lastLine) {
         historyStack.push(this.lastLine.toObject())
       }
@@ -151,14 +151,14 @@ export default class Line extends Plugin {
     this.started = false
   }
 
-  onLeave = (drawEventPramas: DrawEventPramas) => {
+  onLeave = (DrawEventParams: DrawEventParams) => {
     this.isPaint = false
     this.started = false
-    this.disableTransform(drawEventPramas, this.selectedNode)
+    this.disableTransform(DrawEventParams, this.selectedNode)
   }
 
-  onNodeRecreate = (drawEventPramas: DrawEventPramas, node: any) => {
-    const { historyStack } = drawEventPramas
+  onNodeRecreate = (DrawEventParams: DrawEventParams, node: any) => {
+    const { historyStack } = DrawEventParams
     node.on('transformend', function () {
       historyStack.push(this.toObject())
     })

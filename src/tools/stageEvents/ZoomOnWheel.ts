@@ -1,15 +1,19 @@
 import { IStageEvent } from "./IStageEvent";
-import { ZOOM_WHEEL_RATE, ZOOM_MAX, ZOOM_MIN } from "../../constants";
+import { ZOOM_WHEEL_RATE, ZOOM_MAX, ZOOM_MIN } from "../../common/constants";
 import PointUtil from "../PointUtil";
-import { DrawEventPramas } from "../../type";
-export function ZoomByScale({ stage, dragNode }: DrawEventPramas, newScale: number) {
+import { DrawEventParams } from "../../common/type";
+export function ZoomByScale({ stage, dragNode }: DrawEventParams, newScale: number) {
+    if (!stage) {
+        return;
+    }
     const iszoomout = newScale >= 1;
     const oldScale = stage.scaleX();
     const nowscale = newScale * oldScale;
     // 无视scale的点在stage内的位置
+    const point = stage.getPointerPosition() || { x: 0, y: 0 };
     const oldpointpos = {
-        x: (stage.getPointerPosition().x - stage.width() / 2),
-        y: (stage.getPointerPosition().y - stage.height() / 2),
+        x: (point.x - stage.width() / 2),
+        y: (point.y - stage.height() / 2),
     };
     const center = PointUtil.getCenterPos(dragNode);
 
@@ -37,8 +41,8 @@ export default [{
     eventName: "wheel",
     handle: (params, e) => {
         e.evt.preventDefault();
-        const { currentPluginRef } = params;
-        if (currentPluginRef) {
+        const { currentPlugin } = params;
+        if (currentPlugin) {
             return;
         } else {
             const iszoomout = e.evt.deltaY <= 0;

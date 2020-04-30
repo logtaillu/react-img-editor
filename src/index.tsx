@@ -28,7 +28,7 @@ interface ReactImageEditorProps {
   loadingComponent?: any; // 加载中状态组件
 }
 
-export default function ReactImageEditor(props: ReactImageEditorProps) {
+export default function ReactImageEditor(props: ReactImageEditorProps):JSX.Element {
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null)
   useEffect(() => {
     if (!props.active) {
@@ -148,14 +148,14 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
   )
 }
 
-ReactImageEditor.defaultProps = {
-  width: 700,
-  height: 500,
-  style: {},
-  plugins: [],
-  stageEvents: [],
-  toolbar: {
-    items: ['pen', 'eraser', 'arrow', 'rect', 'circle', 'mosaic', 'text', '|', 'repeal', 'download', 'crop'],
-  },
-  active: true
-} as Partial<ReactImageEditorProps>
+  ReactImageEditor.defaultProps = {
+    width: 700,
+    height: 500,
+    style: {},
+    plugins: [],
+    stageEvents: [],
+    toolbar: {
+      items: ['pen', 'eraser', 'arrow', 'rect', 'circle', 'mosaic', 'text', '|', 'repeal', 'download', 'crop'],
+    },
+    active: true
+  } as Partial<ReactImageEditorProps>

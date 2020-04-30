@@ -8,8 +8,8 @@ export default [
     {
         eventName: "touchmove",
         handle: (params, e: any) => {
-            const { dragNode, currentPluginRef } = params;
-            if (currentPluginRef) {
+            const { dragNode, currentPlugin } = params;
+            if (currentPlugin) {
                 return;
             } else {
                 e.evt.preventDefault();

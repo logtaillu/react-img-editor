@@ -14,7 +14,6 @@ export interface DrawEventParams extends EditorContextProps {
   pixelRatio: number;
   pubSub: InstanceType<typeof PubSub>;
   dragNode: any;
-  currentPluginRef?:any;
 }
 export type PluginParamName = 'strokeWidth' | 'color' | 'fontSize' | 'lineType'
 export interface PluginParamValue {

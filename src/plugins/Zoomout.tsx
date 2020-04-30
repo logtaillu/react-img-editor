@@ -1,14 +1,14 @@
 import Plugin from './Plugin';
-import { DrawEventPramas } from '../type';
-import { ZOOM_RATE, ZOOM_MAX } from "../constants";
+import { DrawEventParams } from '../common/type';
+import { ZOOM_RATE, ZOOM_MAX } from "../common/constants";
 import PointUtil from '../tools/PointUtil';
 export default class Zoomout extends Plugin {
     name = "zoomout";
     iconfont = 'iconfont icon-plus';
     title = '放大';
 
-    onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { stage, dragNode } = drawEventPramas;
+    onEnter = (DrawEventParams: DrawEventParams) => {
+        const { stage, dragNode } = DrawEventParams;
         const oldscale = stage.scaleX();
         if (!ZOOM_MAX || (oldscale * ZOOM_RATE <= ZOOM_MAX)) {
             const pos = PointUtil.getCenterPos(dragNode);

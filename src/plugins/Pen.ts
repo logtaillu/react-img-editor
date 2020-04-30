@@ -18,8 +18,8 @@ export default class Pen extends Plugin {
   lastLine: any = null
   isPaint = false
 
-  onDrawStart = (drawEventPramas: DrawEventParams) => {
-    const {stage, drawLayer, paramValue} = drawEventPramas
+  onDrawStart = (drawEventParams: DrawEventParams) => {
+    const {stage, drawLayer, paramValue} = drawEventParams
     const pos = PointUtil.getPointPos(stage);
 
     if (!pos) return
@@ -39,9 +39,8 @@ export default class Pen extends Plugin {
     drawLayer.add(this.lastLine)
   }
 
-  onDraw = (drawEventPramas: DrawEventParams) => {
-
-    const {stage, drawLayer} = drawEventPramas
+  onDraw = (drawEventParams: DrawEventParams) => {
+    const {stage, drawLayer} = drawEventParams
     const pos = PointUtil.getPointPos(stage);
     if (!this.isPaint || !pos) return
     const newPoints = this.lastLine.points().concat([pos.x, pos.y])

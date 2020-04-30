@@ -54,14 +54,16 @@ class Palette extends React.Component<PaletteProps> {
   }
 
   bindStageEvents() {
-    (this.props.stageEvents || []).map(eventname => {
-      if (defaultStageEvents[eventname]) {
-        const curevents = defaultStageEvents[eventname] || [];
-        curevents.map(curevent => {
-          this.stage.on(curevent.eventName, (e: any) => curevent.handle(this.getDrawEventParams(e), e));
-        })
-      }
-    });
+    if (this.stage) {
+      (this.props.stageEvents || []).map(eventname => {
+        if (defaultStageEvents[eventname]) {
+          const curevents = defaultStageEvents[eventname] || [];
+          curevents.map(curevent => {
+            this.stage && this.stage.on(curevent.eventName, (e: any) => curevent.handle(this.getDrawEventParams(e), e));
+          })
+        }
+      });
+    }
   }
 
   componentDidMount() {
@@ -96,7 +98,7 @@ class Palette extends React.Component<PaletteProps> {
   componentWillUnmount() {
     const { currentPlugin } = this.props
     currentPlugin && currentPlugin.onLeave && currentPlugin.onLeave(this.getDrawEventParams(null))
-    this.stage.destroy();
+    this.stage && this.stage.destroy();
   }
 
   init = () => {

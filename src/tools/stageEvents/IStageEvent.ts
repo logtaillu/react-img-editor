@@ -1,7 +1,7 @@
-import { DrawEventPramas } from "../../type";
+import { DrawEventParams } from "../../common/type";
 export interface IStageEvent {
     eventName: string;
-    handle: (DrawEventPramas: DrawEventPramas, e: any) => void;
+    handle: (DrawEventParams: DrawEventParams, e: any) => void;
 }
 
 export interface IStageEventMap {

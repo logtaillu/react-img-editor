@@ -1,14 +1,14 @@
 import Plugin from './Plugin';
-import { DrawEventPramas } from '../type';
-import { ZOOM_RATE, ZOOM_MIN } from "../constants";
+import { DrawEventParams } from '../common/type';
+import { ZOOM_RATE, ZOOM_MIN } from "../common/constants";
 import PointUtil from '../tools/PointUtil';
 export default class Zoomin extends Plugin {
     name = "zoomin";
     iconfont = 'iconfont icon-minus';
     title = '缩小';
 
-    onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { stage, dragNode } = drawEventPramas;
+    onEnter = (DrawEventParams: DrawEventParams) => {
+        const { stage, dragNode } = DrawEventParams;
         const oldscale = stage.scaleX();
         if ( !ZOOM_MIN || (oldscale / ZOOM_RATE >= ZOOM_MIN)) {
             const pos = PointUtil.getCenterPos(dragNode);

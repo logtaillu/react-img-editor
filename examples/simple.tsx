@@ -29,15 +29,17 @@ function Example() {
   return (
     <>
       <ReactImgEditor
-        src={"/examples/test.png"}
+        src={image1}
         plugins={[]}
         width={800}
         getStage={setStage}
         crossOrigin="anonymous"
         defaultPluginName=""
         stageEvents={["zoomOnWheel","zoomOnTouch"]}
-        style={{border:"1px solid #ddd"}}
-        items={['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout']}
+        style={{ border: "1px solid #ddd" }}
+        toolbar={{
+          items:['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout']
+        }}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>
