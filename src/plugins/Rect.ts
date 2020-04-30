@@ -120,7 +120,7 @@ export default class Rect extends Plugin {
         y: pos.y,
         dashEnabled: !!(paramValue && paramValue.lineType && paramValue.lineType === 'dash'),
         dash: [8],
-        strokeScaleEnabled: false,
+        strokeScaleEnabled: true,
       })
       this.lastRect.on('transformend', function() {
         pubSub.pub('PUSH_HISTORY', this)

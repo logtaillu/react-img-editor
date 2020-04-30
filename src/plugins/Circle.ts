@@ -119,7 +119,7 @@ export default class Circle extends Plugin {
         radius: 0,
         dashEnabled: !!(paramValue && paramValue.lineType && paramValue.lineType === 'dash'),
         dash: [8],
-        strokeScaleEnabled: false,
+        strokeScaleEnabled: true,
       })
       this.lastCircle.on('transformend', function() {
         pubSub.pub('PUSH_HISTORY', this)
