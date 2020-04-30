@@ -49,24 +49,11 @@ export default class Rotate extends Plugin {
         }
     }
 
-    getPositionByRotate(rotate, half) {
-        const num = rotate / 90;
-        let nowcenter = { x: half.x, y: half.y };
-        if (num === 1) {
-            nowcenter = { x: -half.y, y: half.x };
-        } else if (num === 2) {
-            nowcenter = { x: -half.x, y: -half.y };
-        } else if (num === 3) {
-            nowcenter = { x: half.y, y: -half.x };
-        }
-        return nowcenter;
-    }
-
     innerRotate(drawEventPramas: DrawEventPramas) {
         const { stage } = drawEventPramas;
         const off = stage.offset();
-        const pos = stage.position();
         const rotation = stage.rotation();
+        const ori = PointUtil.getInnerCenter(stage);
         let half = { x: stage.width() * stage.scaleX() / 2, y: stage.height() * stage.scaleY() / 2 };
         // 拖回0点
         stage.setPosition({ x: 0, y: 0 });
@@ -77,11 +64,10 @@ export default class Rotate extends Plugin {
         stage.setOffset(off);
 
         // 把现在的中点拖回原来的中点
-        const ori = this.getPositionByRotate(rotation, half);
-        const now = this.getPositionByRotate(newrotate, half);
+        const now = PointUtil.getInnerCenter(stage);
         stage.setPosition({
-            x: pos.x + ori.x - now.x,
-            y: pos.y + ori.y - now.y
+            x: ori.x - now.x,
+            y: ori.y - now.y
         });
 
         stage.batchDraw();

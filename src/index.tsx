@@ -9,6 +9,8 @@ import "mdn-polyfills/String.prototype.repeat";
 import "mdn-polyfills/Element.prototype.matches";
 import "mdn-polyfills/Node.prototype.remove";
 import "mdn-polyfills/HTMLCanvasElement.prototype.toBlob";
+import ZoomUtil from './tools/ZoomUtil'
+export { default as ImageUtil } from "./tools/ImageUtil";
 
 interface ReactImageEditorProps {
   width?: number;
@@ -46,7 +48,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
       setImageObj(image)
     }
     image.crossOrigin = 'anonymous'
-    image.setAttribute("crossOrigin","anonymous");
+    image.setAttribute("crossOrigin", "anonymous");
     image.src = props.src
   }, [props.src])
 
@@ -92,9 +94,9 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     height: props.height + 'px',
     ...props.style,
   }
-
+  const zoomin = ZoomUtil.getZoomConfig(props.zoom).innerzoom?"zoom":"outzoom";
   return (
-    <div className="react-img-editor" style={style}>
+    <div className={"react-img-editor"+" " + zoomin} style={style}>
       {
         imageObj ? (
           <div>

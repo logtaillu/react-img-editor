@@ -10,8 +10,9 @@ export function ZoomByScale(params: DrawEventPramas, newScale: number, isCenter 
     }
 }
 
-function canScale(params, nowscale) {
+function canScale(params: any, nowscale: number) {
     const { zoom, stage } = params;
+    nowscale = stage.pixelRatio ? nowscale / stage.pixelRatio: nowscale;
     const zoomconf = ZoomUtil.getZoomConfig(zoom);
     const ratein = !zoomconf.minrate || (nowscale >= zoomconf.minrate);
     const sizein = !zoomconf.minsize || (stage.height() * nowscale >= zoomconf.minsize && stage.width() * nowscale >= zoomconf.minsize);
@@ -70,7 +71,8 @@ export function ZoomInner(params: DrawEventPramas, newScale: number, isCenter = 
             x: pointer.x - mousePointTo.x * newScale,
             y: pointer.y - mousePointTo.y * newScale,
         };
-        stage.position(newPos);
+        const func = stage.getDragBoundFunc();
+        stage.position(func ? func(newPos) : newPos);
         stage.batchDraw();
     }
 }

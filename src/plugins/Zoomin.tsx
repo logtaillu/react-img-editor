@@ -1,6 +1,5 @@
 import Plugin from './Plugin';
 import { DrawEventPramas } from '../type';
-import PointUtil from '../tools/PointUtil';
 import ZoomUtil from '../tools/ZoomUtil';
 import { ZoomByScale } from "../tools/stageEvents/ZoomOnWheel";
 export default class Zoomin extends Plugin {

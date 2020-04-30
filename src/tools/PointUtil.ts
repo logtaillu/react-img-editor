@@ -1,5 +1,6 @@
 import DragWrapper from "../components/DragWrapper";
-export default {
+import { isNum } from "../tools/HelperUitl";
+const PointUtil = {
     getPointPos(stage: any) {
         const pos = stage.getPointerPosition();
         const scale = stage.getScale();
@@ -18,10 +19,36 @@ export default {
         }
         return pos;
     },
+    getPositionByRotate(stage: any) {
+        const rotate = stage.rotation();
+        let half = { x: stage.width() * stage.scaleX() / 2, y: stage.height() * stage.scaleY() / 2 };
+        const num = rotate / 90;
+        let nowcenter = { x: half.x, y: half.y };
+        if (num === 1) {
+            nowcenter = { x: -half.y, y: half.x };
+        } else if (num === 2) {
+            nowcenter = { x: -half.x, y: -half.y };
+        } else if (num === 3) {
+            nowcenter = { x: half.y, y: -half.x };
+        }
+        return nowcenter;
+    },
     getInnerCenter(stage: any) {
+        const pos = PointUtil.getPositionByRotate(stage);
         return {
-            x: stage.width() / 2 + stage.x(),
-            y: stage.height() / 2 + stage.y()
+            x: pos.x + stage.x(),
+            y: pos.y + stage.y()
+        }
+    },
+    boundpos(val: number, boda: number, bodb: number) {
+        if (isNum(boda) && isNum(bodb)) {
+            const min = Math.min(boda, bodb);
+            const max = Math.max(boda, bodb);
+            return Math.max(min, Math.min(val, max));
+        } else {
+            return val;
         }
     }
 }
+
+export default PointUtil;

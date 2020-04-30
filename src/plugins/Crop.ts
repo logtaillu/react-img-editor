@@ -4,6 +4,7 @@ import { DrawEventPramas } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
+import ZoomUtil from '../tools/ZoomUtil'
 
 const toolbarWidth = 275
 const toolbarHeight = 40
@@ -146,12 +147,21 @@ export default class Crop extends Plugin {
     this.virtualLayer.setZIndex(2)
 
     // 绘制透明黑色遮罩
-    const maskRect = new Konva.Rect({
-      globalCompositeOperation: 'source-over',
+    const zoom = ZoomUtil.getZoomConfig(drawEventPramas.zoom);
+    const config = zoom.innerzoom ? {
       x: 0,
       y: 0,
-      width: stage.width() / stage.scale().x,
-      height: stage.height() / stage.scale().y,
+      width: stage.width(),
+      height: stage.height(),
+    } : {
+        x: 0,
+        y: 0,
+        width: stage.width() / stage.scale().x,
+        height: stage.height() / stage.scale().y,
+      };
+    const maskRect = new Konva.Rect({
+      globalCompositeOperation: 'source-over',
+      ...config,
       fill: 'rgba(0, 0, 0, .6)',
     })
 
@@ -162,7 +172,7 @@ export default class Crop extends Plugin {
       y: startPos.y,
       fill: '#FFF',
       draggable: true,
-      globalCompositeOperation: 'destination-out',
+      globalCompositeOperation: 'destination-out'
     })
     this.rect.on('mouseenter', function () {
       stage.container().style.cursor = 'move'
@@ -185,6 +195,7 @@ export default class Crop extends Plugin {
     // 绘制初始裁剪区域
     this.rect.width(endPos.x - this.getRectX())
     this.rect.height(endPos.y - this.getRectY())
+    /**@todo zoomin模式的drag bound */
     this.rect.dragBoundFunc((pos: any) => {
       let x = pos.x
       let y = pos.y
@@ -296,6 +307,7 @@ export default class Crop extends Plugin {
       })
       const imageObj = new Image()
       imageObj.onload = () => {
+        /**@todo zoomin模式的图片裁剪：保持canvas size,保持图片位置，不要黑框 */
         reload(imageObj, this.getRectWidth(), this.getRectHeight())
         this.reset(stage)
       }

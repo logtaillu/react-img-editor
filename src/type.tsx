@@ -6,13 +6,13 @@ export interface DrawEventPramas {
   layer: any;
   paramValue: PluginParamValue | null;
   imageData: ImageData;
-  reload: (imageObj: any, rectWidth: number, rectHeigh: number) => void;
+  reload: (imageObj: any, rectWidth: number, rectHeigh: number, imginfo?: any) => void;
   historyStack: any[];
   pixelRatio: number;
   event?: any;
   plugins: Plugin[];
   dragNode: any;
-  currentPluginRef?:any;
+  currentPluginRef?: any;
   zoom?: IZoomConfig;
 }
 export type PluginParamName = 'strokeWidth' | 'color' | 'fontSize' | 'lineType'

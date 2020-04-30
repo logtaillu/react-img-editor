@@ -8,7 +8,6 @@ import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
 import DragWrapper from './DragWrapper'
 import PointUtil from '../tools/PointUtil'
 import ZoomUtil from '../tools/ZoomUtil'
-import { isNum } from "../tools/HelperUitl";
 interface PaletteProps {
   width: number;
   height: number;
@@ -60,49 +59,44 @@ export default function Palette(props: PaletteProps) {
 
   function initPalette() {
     const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
+    const size = zoomconfig.innerzoom ? style : { width: canvasWidth, height: canvasHeight };
     stageRef.current = new Konva.Stage({
       container: containerIdRef.current,
-      width: canvasWidth,
-      height: canvasHeight,
+      ...size,
       draggable: zoomconfig.innerzoom,
       // 限制在四边内
       dragBoundFunc: zoomconfig.innerzoom ? pos => {
         const stage = stageRef && stageRef.current;
+        const img = imageRef && imageRef.current&& imageRef.current.children && imageRef.current.children[0];
         const { x, y } = pos;
-        if (!stage) {
+        if (!stage || !img) {
           return {
             x: Math.max(x, 0),
             y: Math.max(y, 0)
           }
         }
-        /**@todo 根据渲旋转size和定位点会不同 */
         // 边界
         const rotation = stage.rotation();
         let size = {
-          height: stage.height() * stage.scaleY(),
-          width: stage.width() * stage.scaleX()
+          height: img.height() * stage.scaleY(),
+          width: img.width() * stage.scaleX()
+        }
+        const gap = {
+          x: img.x() * stage.scaleX(),
+          y: img.y() * stage.scaleY()
         }
         const bounds = [
-          { top: 0, bottom: stage.height() - size.height, left: 0, right: stage.width() - size.width },
-          { top: 0, bottom: stage.height() - size.width, left: stage.width(), right: size.height },
-          { top: size.height, bottom: stage.height(), left: stage.width(), right: size.width },
-          { top: size.width, bottom: stage.height(), left: 0, right: stage.width() - size.height }
+          { top: -gap.y, bottom: stage.height() - size.height - gap.y, left: -gap.x, right: stage.width() - size.width - gap.x },
+          { top: -gap.x, bottom: stage.height() - size.width - gap.x, left: stage.width() + gap.y, right: size.height + gap.y },
+          { top: size.height + gap.y, bottom: stage.height() + gap.y, left: stage.width() + gap.x, right: size.width + gap.x },
+          { top: size.width + gap.x, bottom: stage.height() + gap.x, left: -gap.y, right: stage.width() - size.height - gap.y }
         ];
         const bound = bounds[rotation / 90];
-        const getNewPos = (val: number, boda: number, bodb: number) => {
-          if (isNum(boda) && isNum(bodb)) {
-            const min = Math.min(boda, bodb);
-            const max = Math.max(boda, bodb);
-            return Math.max(min, Math.min(val, max));
-          } else {
-            return val;
-          }
-        }
         return {
-          x: getNewPos(x, bound.left, bound.right),
-          y: getNewPos(y, bound.top, bound.bottom)
+          x: PointUtil.boundpos(x, bound.left, bound.right),
+          y: PointUtil.boundpos(y, bound.top, bound.bottom)
         };
-      } : null
+      } : undefined
     })
 
     stageRef.current._pixelRatio = pixelRatio;
@@ -129,9 +123,11 @@ export default function Palette(props: PaletteProps) {
   }
 
   function drawImage() {
+    const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
+    const size = zoomconfig.innerzoom ? style : { width: canvasWidth, height: canvasHeight };
     const img = new Konva.Image({
-      x: 0,
-      y: 0,
+      x: (size.width - canvasWidth) / 2,
+      y: (size.height - canvasHeight) / 2,
       image: props.imageObj,
       width: canvasWidth,
       height: canvasHeight,
@@ -231,7 +227,7 @@ export default function Palette(props: PaletteProps) {
     stageRef.current.off('mouseup touchend')
   }
 
-  function reload(imgObj: any, width: number, height: number) {
+  function reload(imgObj: any, width: number, height: number, imgInfo?: any) {
     removeEvents()
     historyStack.current = []
     stageRef.current = new Konva.Stage({
@@ -243,11 +239,13 @@ export default function Palette(props: PaletteProps) {
     props.getStage && props.getStage(stageRef.current)
 
     const img = new Konva.Image({
-      x: 0,
-      y: 0,
       image: imgObj,
-      width: width,
-      height: height,
+      ...(imgInfo || {
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+      })
     })
 
     const imageLayer = new Konva.Layer()
@@ -309,7 +307,11 @@ export default function Palette(props: PaletteProps) {
       props.currentPlugin.onEnter(getDrawEventPramas(null))
     }
 
-    currentPluginRef.current = props.currentPlugin
+    currentPluginRef.current = props.currentPlugin;
+    if (stageRef && stageRef.current) {
+      const zoom = ZoomUtil.getZoomConfig(props.zoom);
+      stageRef.current.draggable((!props.currentPlugin) && !!(zoom.innerzoom));
+    }
   }, [props.currentPlugin])
   const config = ZoomUtil.getZoomConfig(props.zoom);
   // innerzoom时不使用draggable,disable掉
