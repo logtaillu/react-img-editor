@@ -51,8 +51,9 @@ export default class Text extends Plugin {
     const scale = stage.getScale();
     textarea.value = textNode.text()
     textarea.style.position = 'absolute'
-    textarea.style.left = (textNode.x()*scale.x) + 'px'
-    textarea.style.top = (textNode.y()*scale.y) + 'px'
+    /**textnode位置：鼠标位置相对stage原点的无缩放偏移*/
+    textarea.style.left = (textNode.x()*scale.x + stage.x()) + 'px'
+    textarea.style.top = (textNode.y()*scale.y + stage.y()) + 'px'
     textarea.style.width = "100%";
     textarea.style.overflow="auto";
     textarea.style.wordBreak="break-all";

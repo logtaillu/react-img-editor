@@ -3,10 +3,13 @@ import { IZoomConfig } from "../type";
 
 // 获取原始图片大小的canvas
 const ImageUtil = {
+    getImage(stage:any){
+        return stage.getLayers()[0].children[0];
+    },
     getStageArea(stage: any) {
         const rotation = stage.rotation();
         const num = Math.floor(rotation / 90);
-        const img = stage.getLayers()[0].children[0];
+        const img = ImageUtil.getImage(stage);
         const size = img.size();
         const gap = img.position();
         const pos = stage.position();

@@ -45,16 +45,20 @@ export default function Palette(props: PaletteProps) {
   Konva.pixelRatio = pixelRatio
   const currentPluginRef = useRef(props.currentPlugin)
   const dragRef = useRef<any>(null);
-
+  // 有off过程(防止重复绑定)，需要在bindEvents之前
   function bindStageEvents() {
-    (props.stageEvents || []).map(eventname => {
+    const maphandle = handle =>(props.stageEvents || []).map(eventname => {
       if (defaultStageEvents[eventname]) {
         const curevents = defaultStageEvents[eventname] || [];
         curevents.map(curevent => {
+          handle(curevent);
+          stageRef.current.off(curevent.eventName);
           stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e));
         })
       }
     });
+    maphandle(curevent=>stageRef.current.off(curevent.eventName));
+    maphandle(curevent=>stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
   }
 
   function initPalette() {
@@ -67,7 +71,7 @@ export default function Palette(props: PaletteProps) {
       // 限制在四边内
       dragBoundFunc: zoomconfig.innerzoom ? pos => {
         const stage = stageRef && stageRef.current;
-        const img = imageRef && imageRef.current&& imageRef.current.children && imageRef.current.children[0];
+        const img = imageRef && imageRef.current && imageRef.current.children && imageRef.current.children[0];
         const { x, y } = pos;
         if (!stage || !img) {
           return {
@@ -257,8 +261,8 @@ export default function Palette(props: PaletteProps) {
 
     layerRef.current = new Konva.Layer()
     stageRef.current.add(layerRef.current)
-    bindEvents();
     bindStageEvents();
+    bindEvents();
   }
 
   useEffect(() => {
@@ -319,7 +323,7 @@ export default function Palette(props: PaletteProps) {
     <div className="offset-bound" style={style}>
       <DragWrapper ref={node => dragRef.current = node} disabled={(!!props.currentPlugin) || config.innerzoom}>
         <div className={`${prefixCls}-palette`}>
-          <div id={containerIdRef.current} className={`${prefixCls}-container`} />
+          <div id={containerIdRef.current} className={`${prefixCls}-container`} style={(!props.currentPlugin) && config.innerzoom ? { cursor: "move" } : {}} />
         </div>
       </DragWrapper>
     </div>

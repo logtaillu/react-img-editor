@@ -3,11 +3,10 @@
 ## 备注
 1. 缩放位置：还原中点位置=>2.还原当前点位置（保持某个点位置不变）
 2. ie兼容： 可以加mdn-polyfills，缺什么引什么
+3. 内部zoom:stage维度操作，空白处也可以触发滚动缩放
 
 ## todo
-1. zoominner下的裁剪、文本框位置有误
-2. 原图不一定占满=>初始就让它居中，缩放、旋转、拖拽可以以stage为基准，但是download/dragBound要注意，跟image大小与stage大小有关[ok]
-3. 初始缩放的倍率应该用于zoom判断[ok]
+1. mosic/text/crop旋转情况，各个功能都要测下rotate.zoom.drag的情况，zoom in/out
+2. 有没有办法通过active控制空间释放
 
-2. crop范围（zoom情况下)
 3. 文字块:字先出来，先这样吧

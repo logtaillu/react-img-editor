@@ -1,12 +1,22 @@
 import DragWrapper from "../components/DragWrapper";
 import { isNum } from "../tools/HelperUitl";
 const PointUtil = {
-    getPointPos(stage: any) {
-        const pos = stage.getPointerPosition();
+    // 获取相对stage的无缩放坐标
+    getPointPos(stage: any,point?) {
+        const pos = point || stage.getPointerPosition();
         const scale = stage.getScale();
         const pointPos = {
             x: (pos.x - stage.x()) / scale.x,
             y: (pos.y - stage.y()) / scale.y
+        };
+        return pointPos;
+    },
+    // 转换回实际坐标
+    getOriPos(stage, pos){
+        const scale = stage.getScale();
+        const pointPos = {
+            x: pos.x * scale.x + stage.x(),
+            y: pos.y * scale.y + stage.y()
         };
         return pointPos;
     },

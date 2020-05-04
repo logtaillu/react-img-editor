@@ -5,6 +5,7 @@ import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
 import ZoomUtil from '../tools/ZoomUtil'
+import ImageUtil from '../tools/ImageUtil'
 
 const toolbarWidth = 275
 const toolbarHeight = 40
@@ -148,11 +149,12 @@ export default class Crop extends Plugin {
 
     // 绘制透明黑色遮罩
     const zoom = ZoomUtil.getZoomConfig(drawEventPramas.zoom);
+    const img = ImageUtil.getImage(drawEventPramas.stage);
     const config = zoom.innerzoom ? {
-      x: 0,
-      y: 0,
-      width: stage.width(),
-      height: stage.height(),
+      x: img.x(),
+      y: img.y(),
+      width: img.width(),
+      height: img.height(),
     } : {
         x: 0,
         y: 0,
@@ -197,27 +199,28 @@ export default class Crop extends Plugin {
     this.rect.height(endPos.y - this.getRectY())
     /**@todo zoomin模式的drag bound */
     this.rect.dragBoundFunc((pos: any) => {
-      let x = pos.x
-      let y = pos.y
-
+      pos = PointUtil.getPointPos(stage, pos);
+      let { x, y } = pos;
+      const cur = ImageUtil.getImage(stage);
       if (this.transformer.width() >= 0) {
-        if (pos.x <= 0) x = 0
-        if (pos.x >= stage.width() - this.transformer.width()) x = stage.width() - this.transformer.width()
+        if (pos.x <= cur.x()) x = cur.x();
+        if (pos.x >= cur.width() - this.transformer.width() + cur.x()) x = cur.width() - this.transformer.width() + cur.x();
       } else {
-        if (pos.x >= stage.width()) x = stage.width()
-        if (pos.x <= - this.transformer.width()) x = - this.transformer.width()
+        if (pos.x >= cur.width() + cur.x()) x = cur.width() + cur.x()
+        if (pos.x <= cur.x() - this.transformer.width()) x = - this.transformer.width() + cur.x()
       }
 
       if (this.transformer.height() >= 0) {
-        if (pos.y <= 0) y = 0
-        if (pos.y >= stage.height() - this.transformer.height()) y = stage.height() - this.transformer.height()
+        if (pos.y <= cur.y()) y = cur.y()
+        if (pos.y >= cur.height() - this.transformer.height() + cur.y()) y = cur.height() - this.transformer.height() + cur.y()
       } else {
-        if (pos.y >= stage.height()) y = stage.height()
-        if (pos.y <= - this.transformer.height()) y = - this.transformer.height()
+        if (pos.y >= cur.height() + cur.y()) y = cur.height() + cur.y()
+        if (pos.y <= - this.transformer.height() + cur.y()) y = - this.transformer.height() + cur.y()
       }
 
       this.adjustToolbarPosition(stage)
-      return { x, y }
+      const point = PointUtil.getOriPos(stage, { x, y });
+      return point;
     })
 
     this.virtualLayer.draw()
@@ -242,44 +245,44 @@ export default class Crop extends Plugin {
         let y = newBox.y
         let width = newBox.width
         let height = newBox.height
-
+        const img = ImageUtil.getImage(stage);
         if (newBox.width >= 0) {
-          if (newBox.x <= 0) {
-            x = 0
-            width = newBox.width + newBox.x
+          if (newBox.x <= img.x()) {
+            x = img.x()
+            width = newBox.width + newBox.x - img.x()
           }
 
-          if (newBox.x >= stage.width() - newBox.width) {
-            width = stage.width() - oldBox.x
+          if (newBox.x >= img.width() - newBox.width + img.x()) {
+            width = img.width() - oldBox.x + img.x()
           }
         } else {
-          if (newBox.x >= stage.width()) {
-            x = stage.width()
-            width = newBox.width + (newBox.x - stage.width())
+          if (newBox.x >= img.width() + img.x()) {
+            x = img.width() + img.x();
+            width = newBox.width + (newBox.x - img.width() - img.x())
           }
 
-          if (newBox.x <= - newBox.width) {
-            width = - oldBox.x
+          if (newBox.x <= - newBox.width + img.x()) {
+            width = img.x() - oldBox.x
           }
         }
 
         if (newBox.height >= 0) {
-          if (newBox.y <= 0) {
-            y = 0
-            height = newBox.height + newBox.y
+          if (newBox.y <= img.y()) {
+            y = img.y();
+            height = newBox.height + newBox.y - img.y()
           }
 
-          if (newBox.y >= stage.height() - newBox.height) {
-            height = stage.height() - oldBox.y
+          if (newBox.y >= img.height() - newBox.height + img.y()) {
+            height = img.height() - oldBox.y + img.y();
           }
         } else {
-          if (newBox.y >= stage.height()) {
-            y = stage.height()
-            height = newBox.height + (newBox.y - stage.height())
+          if (newBox.y >= img.height() + img.y()) {
+            y = img.height() + img.y();
+            height = newBox.height + (newBox.y - img.height() - img.y())
           }
 
-          if (newBox.y <= - newBox.height) {
-            height = - oldBox.y
+          if (newBox.y <= - newBox.height + img.y()) {
+            height = img.y() - oldBox.y
           }
         }
 
