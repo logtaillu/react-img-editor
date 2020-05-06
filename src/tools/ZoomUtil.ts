@@ -20,7 +20,7 @@ function getZoomConfig(zoom?: IZoomConfig): {
         maxsize: 0,
         minsize: 0,
         wheelrate: ZOOM_WHEEL_RATE,
-        innerzoom: false,
+        innerzoom: true,
         dragTarget: "stage"
     };
     Object.keys(defaultval).map(key => {

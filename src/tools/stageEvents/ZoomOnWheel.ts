@@ -39,6 +39,7 @@ export function ZoomOutter(params: DrawEventPramas, newScale: number, isCenter =
         };
         const center = PointUtil.getCenterPos(dragNode);
         stage.scale({ x: newScale * oldScale, y: newScale * oldScale });
+        stage.position({ x: stage.x() * newScale, y: stage.y() * newScale });
         const size = stage.size();
         stage.size({ width: size.width * newScale, height: size.height * newScale });
         stage.batchDraw();

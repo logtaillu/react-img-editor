@@ -20,14 +20,14 @@ const PointUtil = {
             y: (pos.y - stage.y()) / scale.y
         };
         const rotation = stage.rotation();
-        pointPos = PointUtil.rotatePointRightAngle(pointPos,-rotation);
+        pointPos = PointUtil.rotatePointRightAngle(pointPos, -rotation);
         return pointPos;
     },
     // 转换回实际坐标
     getOriPos(stage, pos) {
         const scale = stage.getScale();
         const rotation = stage.rotation();
-        pos = PointUtil.rotatePointRightAngle(pos,rotation);
+        pos = PointUtil.rotatePointRightAngle(pos, rotation);
         const pointPos = {
             x: pos.x * scale.x + stage.x(),
             y: pos.y * scale.y + stage.y()
@@ -70,15 +70,17 @@ const PointUtil = {
             // 顺序排序
             bound.sort((a, b) => a - b);
             gap.sort((a, b) => a - b);
+            const heightoff = Math.max((gap[1] - gap[0]) - (bound[1] - bound[0]), 0);
             // bound[0]-gap[0]<=val<=bound[1]-gap[1]
-            return Math.min(Math.max(val, bound[0] - gap[0]), bound[1] - gap[1]);
+            // [bound -heightoff,bound+heightoff]
+            return Math.min(Math.max(val, bound[0] - gap[0] - heightoff), bound[1] - gap[1] + heightoff);
         } else {
             return val;
         }
     },
-    isPointInImage(pos,img){
+    isPointInImage(pos, img) {
         const imgpos = img.position();
-        return pos.x>=imgpos.x&&pos.x<=(imgpos.x+img.width())&&pos.y>=imgpos.y&&pos.y<=(imgpos.y+img.height());
+        return pos.x >= imgpos.x && pos.x <= (imgpos.x + img.width()) && pos.y >= imgpos.y && pos.y <= (imgpos.y + img.height());
     }
 }
 

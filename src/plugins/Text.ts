@@ -191,7 +191,7 @@ export default class Text extends Plugin {
       fill: color,
       padding: 3,
       lineHeight: 1.1,
-      rotation: ZoomUtil.getZoomConfig(drawEventPramas.zoom).innerzoom ? -stage.rotation() : 0
+      rotation: -stage.rotation()
     })
     textNode.on('dragend', function () {
       historyStack.push(this.toObject())

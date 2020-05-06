@@ -44,13 +44,7 @@ const ImageUtil = {
         // 缩放回原始大小
         const scale = stage.scale();
         stage.scale({ x: 1, y: 1 });
-        let canvas = zoomin ?
-            stage.toCanvas({ pixelRatio: stage.pixelRatio, ...ImageUtil.getStageArea(stage) }) :
-            stage.toCanvas({
-                pixelRatio: stage.pixelRatio, ...stage.position(),
-                width: stage.width() / scale.x,
-                height: stage.height() / scale.y
-            });
+        let canvas = stage.toCanvas({ pixelRatio: stage.pixelRatio, ...ImageUtil.getStageArea(stage) }) 
         stage.scale(scale);
         return canvas;
     }

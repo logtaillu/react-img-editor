@@ -250,7 +250,10 @@ export default function Palette(props: PaletteProps) {
     })
     stageRef.current._pixelRatio = pixelRatio
     props.getStage && props.getStage(stageRef.current)
-
+    if (imgInfo) {
+      imgInfo.x = (width - imgInfo.width) / 2;
+      imgInfo.y = (height - imgInfo.height) / 2;
+    }
     const img = new Konva.Image({
       image: imgObj,
       ...(imgInfo || {
@@ -272,6 +275,11 @@ export default function Palette(props: PaletteProps) {
     stageRef.current.add(layerRef.current)
     bindStageEvents();
     bindEvents();
+    if (dragRef && dragRef.current && !ZoomUtil.getZoomConfig(props.zoom).innerzoom) {
+      const dragNode = dragRef.current;
+      const center = PointUtil.getCenterPos(dragNode);
+      dragNode.setPos({ x: center.x, y: center.y });
+    }
   }
 
   useEffect(() => {

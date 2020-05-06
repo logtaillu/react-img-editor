@@ -17,11 +17,11 @@ export default class Rotate extends Plugin {
         child.setRotation(rotation % 360);
         const num = (rotation / 90) % 4;
         if (num === 1) {
-            child.setPosition({ x: x / scale.x, y: 0 });
+            child.setPosition({ x: x, y: 0 });
         } else if (num === 2) {
-            child.setPosition({ x: x / scale.x, y: y / scale.y });
+            child.setPosition({ x: x, y: y });
         } else if (num === 3) {
-            child.setPosition({ x: 0, y: y / scale.y });
+            child.setPosition({ x: 0, y: y });
         }
     }
 
@@ -35,12 +35,8 @@ export default class Rotate extends Plugin {
             const pos = PointUtil.getCenterPos(dragNode);
             const scale = stage.scale();
             stage.setSize({ width: height, height: width });
-            const childs = imageLayer.getChildren();
-            childs.map((child: any) => this.rotate(child, height, width, scale));
-            const otherchilds = layer.getChildren();
-            otherchilds.map((child: any) => this.rotate(child, height, width, scale));
-            imageLayer.draw();
-            layer.draw();
+            this.rotate(stage, height, width, scale);
+            stage.batchDraw();
             const newPos = PointUtil.getCenterPos(dragNode);
             dragNode.resetPos({
                 x: newPos.x - pos.x,

@@ -63,7 +63,7 @@ export default class Crop extends Plugin {
     if (left < 0) left = 0
     if (left > stage.width() - toolbarWidth) left = stage.width() - toolbarWidth
     if (top < 0) top = 0
-    if (top > stage.height()) top = stage.height()
+    if (top > stage.height() - toolbarHeight) top = stage.height() - toolbarHeight
 
     $toolbar.style.left = `${left}px`
     $toolbar.style.top = `${top}px`
