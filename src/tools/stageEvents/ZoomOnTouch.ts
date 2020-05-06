@@ -10,7 +10,8 @@ export default [
         eventName: "touchmove",
         handle: (params, e: any) => {
             const { dragNode, currentPluginRef } = params;
-            if (currentPluginRef) {
+            const touches = e.evt && e.evt.touches || [];
+            if (currentPluginRef || touches.length < 2) {
                 return;
             } else {
                 e.evt.preventDefault();
@@ -50,9 +51,13 @@ export default [
     },
     {
         eventName: 'touchstart',
-        handle: (params) => {
-            const { dragNode } = params;
-            dragNode.lastDist = 0;
+        handle: (params, e: any) => {
+            const { dragNode, stage } = params;
+            const touches = e.evt && e.evt.touches || [];
+            if (touches.length >= 2) {
+                dragNode.lastDist = 0;
+                stage.draggable(false);
+            }
         }
     }
 ] as IStageEvent[];

@@ -6,9 +6,8 @@
 3. 内部zoom:stage维度操作，空白处也可以触发滚动缩放
 
 ## todo
-1. zoomout的旋转bug
-2. zoomin crop save
-
-2. 有没有办法通过active控制空间释放
+1. touch模式，dragTarget
+2. edit状态
+3. 外部下载，去除编辑框
 
 3. 文字块:字先出来，先这样吧

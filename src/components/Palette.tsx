@@ -23,6 +23,7 @@ interface PaletteProps {
   active?: boolean;
   zoom?: IZoomConfig;
   activeResize?: boolean;
+  closePlugin?: any;
 }
 
 export default function Palette(props: PaletteProps) {
@@ -215,14 +216,16 @@ export default function Palette(props: PaletteProps) {
     const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
       ImageUtil.getImage(stageRef.current);
     if (target) {
-      target.on("mouseenter", (e: any) => {
-        if (!currentPlugin) {
+      target.on("mouseenter touchstart", (e: any) => {
+        const touches = e.evt && e.evt.touches || [];
+        if (!currentPlugin && touches.length < 2) {
           stageRef.current.draggable(true);
           stageRef.current.container().style.cursor = 'move';
         }
       });
-      target.on("mouseleave", (e: any) => {
-        if (!currentPlugin) {
+      target.on("mouseleave touchend", (e: any) => {
+        const touches = e.evt && e.evt.touches || [];
+        if (!currentPlugin && touches.length < 2) {
           stageRef.current.draggable(false);
           stageRef.current.container().style.cursor = 'default';
         }
@@ -240,8 +243,8 @@ export default function Palette(props: PaletteProps) {
     const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
       ImageUtil.getImage(stageRef.current);
     if (target) {
-      target.off('mouseenter')
-      target.off('mouseleave')
+      target.off('mouseenter touchstart')
+      target.off('mouseleave touchend')
     }
   }
 
@@ -293,6 +296,9 @@ export default function Palette(props: PaletteProps) {
     drawImage()
     layerRef.current = new Konva.Layer()
     stageRef.current.add(layerRef.current)
+    if (props.closePlugin) {
+      props.closePlugin(closePlugin.bind(this));
+    }
 
     return () => {
       const currentPlugin = currentPluginRef.current
@@ -394,6 +400,14 @@ export default function Palette(props: PaletteProps) {
       stageRef.current.draggable((!props.currentPlugin) && !!(zoom.innerzoom));
     }
   }, [props.currentPlugin])
+
+  function closePlugin() {
+    if (props.currentPlugin && props.currentPlugin.onLeave) {
+      props.currentPlugin.onLeave(getDrawEventPramas(null));
+    }
+    props.handlePluginChange({} as any);
+  }
+
   const config = ZoomUtil.getZoomConfig(props.zoom);
   // innerzoom时不使用draggable,disable掉
   return (

@@ -1,24 +1,33 @@
-import React, { useRef,useState } from 'react'
+import React, { useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
-import ReactImgEditor from '../src/index'
+import ReactImgEditor, { ImageUtil } from '../src/index'
 import '../assets/index.less'
 
 function Example() {
   const stageRef = useRef<any>(null)
   const [active, setActive] = useState<boolean | null>(true)
+  let closefunc = null;
   function setStage(stage) {
     stageRef.current = stage
   }
 
   function downloadImage() {
-    const canvas = stageRef.current.toCanvas({ pixelRatio: stageRef.current._pixelRatio })
-    canvas.toBlob(function(blob: any) {
-      const link = document.createElement('a')
-      link.download = ''
-      link.href = URL.createObjectURL(blob)
-      link.click()
-      link.remove();
-    }, 'image/jpeg')
+    const handle = () => {
+      const canvas = ImageUtil.getImageCanvas({ stage: stageRef.current, zoom: { innerzoom: true } });
+      canvas.toBlob(function (blob: any) {
+        const link = document.createElement('a')
+        link.download = ''
+        link.href = URL.createObjectURL(blob)
+        link.click()
+        link.remove();
+      }, 'image/jpeg')
+    };
+    if (closefunc) {
+      closefunc();
+      setTimeout(handle, 100);
+    } else {
+      handle();
+    }
   }
 
   const image1 = 'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'
@@ -34,14 +43,15 @@ function Example() {
         width={800}
         getStage={setStage}
         defaultPluginName=""
-        stageEvents={["zoomOnWheel","zoomOnTouch"]}
+        stageEvents={["zoomOnWheel", "zoomOnTouch"]}
         style={{ border: "1px solid #ddd" }}
-        zoom={{innerzoom:true}}
+        zoom={{ innerzoom: true }}
         active={active}
+        closePlugin={func => closefunc = func}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>
-        <button onClick={()=>setActive(!active)}>active</button>
+        <button onClick={() => setActive(!active)}>active</button>
       </div>
     </div>
   )

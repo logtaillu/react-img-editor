@@ -22,6 +22,7 @@ interface ReactImageEditorProps {
   };
   src: string;
   getStage?: (stage: any) => void;
+  closePlugin?: (func: any) => void;
   defaultPluginName?: string;
   stageEvents?: string[];//启用默认的几个stage事件
   active?: boolean; // 是否激活，控制销毁
@@ -105,7 +106,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     return <div />;
   }
   return (
-    <div className={"react-img-editor"+" " + zoomin} style={style}>
+    <div className={"react-img-editor" + " " + zoomin} style={style}>
       {
         imageObj ? (
           <div>
@@ -122,6 +123,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               active={props.active}
               activeResize={props.activeResize}
               zoom={props.zoom}
+              closePlugin={props.closePlugin}
             />
             <Toolbar width={props.width!}
               plugins={plugins!}
