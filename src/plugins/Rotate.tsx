@@ -65,11 +65,12 @@ export default class Rotate extends Plugin {
 
         // 把现在的中点拖回原来的中点
         const now = PointUtil.getInnerCenter(stage);
-        stage.setPosition({
+        const newPos = {
             x: ori.x - now.x,
             y: ori.y - now.y
-        });
-
+        };
+        const func = stage.getDragBoundFunc();
+        stage.position(func ? func(newPos) : newPos);
         stage.batchDraw();
     }
 }

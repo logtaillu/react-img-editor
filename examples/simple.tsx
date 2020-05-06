@@ -1,11 +1,11 @@
-import React, { useRef } from 'react'
+import React, { useRef,useState } from 'react'
 import ReactDOM from 'react-dom'
 import ReactImgEditor from '../src/index'
 import '../assets/index.less'
 
 function Example() {
   const stageRef = useRef<any>(null)
-
+  const [active, setActive] = useState<boolean | null>(true)
   function setStage(stage) {
     stageRef.current = stage
   }
@@ -27,7 +27,7 @@ function Example() {
   // const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'
 
   return (
-    <>
+    <div>
       <ReactImgEditor
         src={"./1m.jpg"}
         plugins={[]}
@@ -37,11 +37,13 @@ function Example() {
         stageEvents={["zoomOnWheel","zoomOnTouch"]}
         style={{ border: "1px solid #ddd" }}
         zoom={{innerzoom:true}}
+        active={active}
       />
       <div style={{ marginTop: '50px' }}>
         <button onClick={downloadImage}>download</button>
+        <button onClick={()=>setActive(!active)}>active</button>
       </div>
-    </>
+    </div>
   )
 }
 

@@ -4,6 +4,7 @@ import { DrawEventPramas, PluginParamValue, PluginParamName } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
+import ZoomUtil from '../tools/ZoomUtil'
 
 export default class Text extends Plugin {
   name = 'text'
@@ -51,17 +52,19 @@ export default class Text extends Plugin {
     const scale = stage.getScale();
     textarea.value = textNode.text()
     textarea.style.position = 'absolute'
+    const pos = PointUtil.rotatePointRightAngle(textNode.position(), stage.rotation());
     /**textnode位置：鼠标位置相对stage原点的无缩放偏移*/
-    textarea.style.left = (textNode.x()*scale.x + stage.x()) + 'px'
-    textarea.style.top = (textNode.y()*scale.y + stage.y()) + 'px'
+    /**textarea:相对于canvas区域的 */
+    textarea.style.left = (pos.x * scale.x + stage.x()) + 'px'
+    textarea.style.top = (pos.y * scale.y + stage.y()) + 'px'
     textarea.style.width = "100%";
-    textarea.style.overflow="auto";
-    textarea.style.wordBreak="break-all";
-    textarea.style.height = (textNode.height()*scale.y) + 'px'
+    textarea.style.overflow = "auto";
+    textarea.style.wordBreak = "break-all";
+    textarea.style.height = (textNode.height() * scale.y) + 'px'
     textarea.style.lineHeight = String(textNode.lineHeight())
     textarea.style.padding = textNode.padding() + 'px'
     textarea.style.margin = '0px'
-    textarea.style.fontSize = (textNode.fontSize()*scale.x) + 'px'
+    textarea.style.fontSize = (textNode.fontSize() * scale.x) + 'px'
     textarea.style.color = textNode.fill()
     textarea.style.fontFamily = textNode.fontFamily()
     textarea.style.border = 'none'
@@ -77,7 +80,7 @@ export default class Text extends Plugin {
       textNode.text(e.target.value)
       layer.draw()
       // textarea.style.width = ((textNode.width())*scale.x) + 'px'
-      textarea.style.height = (textNode.height()*scale.y) + 'px'
+      textarea.style.height = (textNode.height() * scale.y) + 'px'
     })
 
     textarea.addEventListener('blur', () => {
@@ -100,16 +103,16 @@ export default class Text extends Plugin {
   }
 
   enableTransform = (drawEventPramas: DrawEventPramas, node: any) => {
-    const {stage, layer} = drawEventPramas
+    const { stage, layer } = drawEventPramas
 
     if (!this.transformer) {
       this.transformer = new Konva.Transformer({ ...transformerStyle, enabledAnchors: [], padding: 2 })
       layer.add(this.transformer)
       this.transformer.attachTo(node)
-      node.on('mouseenter', function() {
+      node.on('mouseenter', function () {
         stage.container().style.cursor = 'move'
       })
-      node.on('mouseleave', function() {
+      node.on('mouseleave', function () {
         stage.container().style.cursor = 'text'
       })
       stage.container().style.cursor = 'move'
@@ -120,7 +123,7 @@ export default class Text extends Plugin {
   }
 
   disableTransform = (drawEventPramas: DrawEventPramas, node: any, remove?: boolean) => {
-    const {stage, layer, historyStack} = drawEventPramas
+    const { stage, layer, historyStack } = drawEventPramas
 
     if (this.transformer) {
       this.transformer.remove()
@@ -147,7 +150,7 @@ export default class Text extends Plugin {
   }
 
   onEnter = (drawEventPramas: DrawEventPramas) => {
-    const {stage, layer} = drawEventPramas
+    const { stage, layer } = drawEventPramas
     const container = stage.container()
     container.style.cursor = 'text'
     container.tabIndex = 1 // make it focusable
@@ -161,7 +164,7 @@ export default class Text extends Plugin {
   }
 
   onClick = (drawEventPramas: DrawEventPramas) => {
-    const {event, stage, layer, paramValue, historyStack} = drawEventPramas
+    const { event, stage, layer, paramValue, historyStack } = drawEventPramas
 
     if (event.target.name && event.target.name() === 'text') {
       // 之前没有选中节点或者在相同节点之间切换点击
@@ -188,8 +191,9 @@ export default class Text extends Plugin {
       fill: color,
       padding: 3,
       lineHeight: 1.1,
+      rotation: ZoomUtil.getZoomConfig(drawEventPramas.zoom).innerzoom ? -stage.rotation() : 0
     })
-    textNode.on('dragend', function() {
+    textNode.on('dragend', function () {
       historyStack.push(this.toObject())
     })
 
@@ -227,15 +231,15 @@ export default class Text extends Plugin {
   }
 
   onLeave = (drawEventPramas: DrawEventPramas) => {
-    const {stage} = drawEventPramas
+    const { stage } = drawEventPramas
     stage.container().style.cursor = 'default'
     this.removeTextareaBlurModal()
     this.disableTransform(drawEventPramas, this.selectedNode)
   }
 
   onNodeRecreate = (drawEventPramas: DrawEventPramas, node: any) => {
-    const {historyStack} = drawEventPramas
-    node.on('dragend', function() {
+    const { historyStack } = drawEventPramas
+    node.on('dragend', function () {
       historyStack.push(this.toObject())
     })
   }

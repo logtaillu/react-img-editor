@@ -1,19 +1,33 @@
 import DragWrapper from "../components/DragWrapper";
 import { isNum } from "../tools/HelperUitl";
 const PointUtil = {
+    rotatePointRightAngle(point: { x, y }, rotation) {
+        const rotate = rotation * Math.PI / 180;
+        // 因为我们只有90度单位的旋转
+        const cos = parseInt(Math.cos(rotate).toFixed(0));
+        const sin = parseInt(Math.sin(rotate).toFixed(0));
+        return {
+            x: cos * point.x - sin * point.y,
+            y: sin * point.x + cos * point.y
+        };
+    },
     // 获取相对stage的无缩放坐标
-    getPointPos(stage: any,point?) {
+    getPointPos(stage: any, point?) {
         const pos = point || stage.getPointerPosition();
-        const scale = stage.getScale();
-        const pointPos = {
+        const scale = stage.scale();
+        let pointPos = {
             x: (pos.x - stage.x()) / scale.x,
             y: (pos.y - stage.y()) / scale.y
         };
+        const rotation = stage.rotation();
+        pointPos = PointUtil.rotatePointRightAngle(pointPos,-rotation);
         return pointPos;
     },
     // 转换回实际坐标
-    getOriPos(stage, pos){
+    getOriPos(stage, pos) {
         const scale = stage.getScale();
+        const rotation = stage.rotation();
+        pos = PointUtil.rotatePointRightAngle(pos,rotation);
         const pointPos = {
             x: pos.x * scale.x + stage.x(),
             y: pos.y * scale.y + stage.y()
@@ -50,14 +64,21 @@ const PointUtil = {
             y: pos.y + stage.y()
         }
     },
-    boundpos(val: number, boda: number, bodb: number) {
-        if (isNum(boda) && isNum(bodb)) {
-            const min = Math.min(boda, bodb);
-            const max = Math.max(boda, bodb);
-            return Math.max(min, Math.min(val, max));
+    // 相对于pos的gap范围需要在bound范围内，改用坐标方式计算
+    boundpos(val: number, gap: number[], bound: number[]) {
+        if (isNum(bound[0]) && isNum(bound[1]) && isNum(gap[0]) && isNum(gap[1])) {
+            // 顺序排序
+            bound.sort((a, b) => a - b);
+            gap.sort((a, b) => a - b);
+            // bound[0]-gap[0]<=val<=bound[1]-gap[1]
+            return Math.min(Math.max(val, bound[0] - gap[0]), bound[1] - gap[1]);
         } else {
             return val;
         }
+    },
+    isPointInImage(pos,img){
+        const imgpos = img.position();
+        return pos.x>=imgpos.x&&pos.x<=(imgpos.x+img.width())&&pos.y>=imgpos.y&&pos.y<=(imgpos.y+img.height());
     }
 }
 

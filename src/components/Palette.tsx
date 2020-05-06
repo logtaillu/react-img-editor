@@ -1,6 +1,6 @@
 import Konva from 'konva'
 import Plugin from '../plugins/Plugin'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { PluginParamValue, DrawEventPramas, IZoomConfig } from '../type'
 import { prefixCls } from '../constants'
 import { uuid } from '../utils'
@@ -8,6 +8,7 @@ import { defaultStageEvents } from "../tools/stageEvents/StageEventType";
 import DragWrapper from './DragWrapper'
 import PointUtil from '../tools/PointUtil'
 import ZoomUtil from '../tools/ZoomUtil'
+import ImageUtil from "../tools/ImageUtil";
 interface PaletteProps {
   width: number;
   height: number;
@@ -47,7 +48,7 @@ export default function Palette(props: PaletteProps) {
   const dragRef = useRef<any>(null);
   // 有off过程(防止重复绑定)，需要在bindEvents之前
   function bindStageEvents() {
-    const maphandle = handle =>(props.stageEvents || []).map(eventname => {
+    const maphandle = handle => (props.stageEvents || []).map(eventname => {
       if (defaultStageEvents[eventname]) {
         const curevents = defaultStageEvents[eventname] || [];
         curevents.map(curevent => {
@@ -57,8 +58,8 @@ export default function Palette(props: PaletteProps) {
         })
       }
     });
-    maphandle(curevent=>stageRef.current.off(curevent.eventName));
-    maphandle(curevent=>stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
+    maphandle(curevent => stageRef.current.off(curevent.eventName));
+    maphandle(curevent => stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
   }
 
   function initPalette() {
@@ -71,34 +72,16 @@ export default function Palette(props: PaletteProps) {
       // 限制在四边内
       dragBoundFunc: zoomconfig.innerzoom ? pos => {
         const stage = stageRef && stageRef.current;
-        const img = imageRef && imageRef.current && imageRef.current.children && imageRef.current.children[0];
-        const { x, y } = pos;
+        const img = ImageUtil.getImage(stage);
         if (!stage || !img) {
-          return {
-            x: Math.max(x, 0),
-            y: Math.max(y, 0)
-          }
+          return pos;
         }
-        // 边界
-        const rotation = stage.rotation();
-        let size = {
-          height: img.height() * stage.scaleY(),
-          width: img.width() * stage.scaleX()
-        }
-        const gap = {
-          x: img.x() * stage.scaleX(),
-          y: img.y() * stage.scaleY()
-        }
-        const bounds = [
-          { top: -gap.y, bottom: stage.height() - size.height - gap.y, left: -gap.x, right: stage.width() - size.width - gap.x },
-          { top: -gap.x, bottom: stage.height() - size.width - gap.x, left: stage.width() + gap.y, right: size.height + gap.y },
-          { top: size.height + gap.y, bottom: stage.height() + gap.y, left: stage.width() + gap.x, right: size.width + gap.x },
-          { top: size.width + gap.x, bottom: stage.height() + gap.x, left: -gap.y, right: stage.width() - size.height - gap.y }
-        ];
-        const bound = bounds[rotation / 90];
+        const { x, y } = pos;
+        const info = ImageUtil.getImageInfo(stage);
+        // height: [info.y,info.y+info.height]=>[0,stage.height()]
         return {
-          x: PointUtil.boundpos(x, bound.left, bound.right),
-          y: PointUtil.boundpos(y, bound.top, bound.bottom)
+          x: PointUtil.boundpos(x, [info.x, info.x + info.width], [0, stage.width()]),
+          y: PointUtil.boundpos(y, [info.y, info.y + info.height], [0, stage.height()])
         };
       } : undefined
     })
@@ -220,6 +203,16 @@ export default function Palette(props: PaletteProps) {
         currentPlugin.onDrawEnd(getDrawEventPramas(e))
       }
     })
+    stageRef.current.on("mouseenter", (e: any) => {
+      if (!currentPlugin) {
+        stageRef.current.container().style.cursor = 'move';
+      }
+    });
+    stageRef.current.on("mouseleave", (e: any) => {
+      if (!currentPlugin) {
+        stageRef.current.container().style.cursor = 'default';
+      }
+    });
   }
 
   function removeEvents() {
@@ -229,6 +222,8 @@ export default function Palette(props: PaletteProps) {
     stageRef.current.off('mousedown touchstart')
     stageRef.current.off('mousemove touchmove')
     stageRef.current.off('mouseup touchend')
+    stageRef.current.off('mouseenter')
+    stageRef.current.off('mouseleave')
   }
 
   function reload(imgObj: any, width: number, height: number, imgInfo?: any) {
@@ -288,11 +283,17 @@ export default function Palette(props: PaletteProps) {
     }
   }, [props.imageObj, props.currentPlugin, props.currentPluginParamValue])
   // 临时处理
+  const [saveSize, setSaveSize] = useState<HTMLImageElement | null>(null)
   useEffect(() => {
-    if (!props.active) {
-      if (stageRef && stageRef.current) {
+    if (stageRef && stageRef.current) {
+      if (!props.active) {
+        setSaveSize(stageRef.current.size());
         stageRef.current.size({ width: 0, height: 0 });
-        stageRef.current.clear();
+        stageRef.current.batchDraw();
+        // stageRef.current.clear();
+      } else if (saveSize) {
+        stageRef.current.size(saveSize);
+        stageRef.current.batchDraw();
       }
     }
   }, [props.active]);
@@ -323,7 +324,7 @@ export default function Palette(props: PaletteProps) {
     <div className="offset-bound" style={style}>
       <DragWrapper ref={node => dragRef.current = node} disabled={(!!props.currentPlugin) || config.innerzoom}>
         <div className={`${prefixCls}-palette`}>
-          <div id={containerIdRef.current} className={`${prefixCls}-container`} style={(!props.currentPlugin) && config.innerzoom ? { cursor: "move" } : {}} />
+          <div id={containerIdRef.current} className={`${prefixCls}-container`} />
         </div>
       </DragWrapper>
     </div>

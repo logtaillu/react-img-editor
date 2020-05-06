@@ -129,7 +129,9 @@ export default class Crop extends Plugin {
 
   onEnter = (drawEventPramas: DrawEventPramas) => {
     const { stage } = drawEventPramas
-    stage.container().style.cursor = 'crosshair'
+    const img = ImageUtil.getImage(stage);
+    img.on("mouseenter", () => stage.container().style.cursor = 'crosshair');
+    img.on("mouseleave", () => stage.container().style.cursor = 'default');
   }
 
   onDrawStart = (drawEventPramas: DrawEventPramas) => {
@@ -139,9 +141,10 @@ export default class Crop extends Plugin {
     const { stage } = drawEventPramas
 
     if (document.getElementById(this.toolbarId)) return
+    const startPos = PointUtil.getPointPos(stage);
+    if (!PointUtil.isPointInImage(startPos, ImageUtil.getImage(stage))) return;
     this.isPaint = true
 
-    const startPos = PointUtil.getPointPos(stage);
 
     this.virtualLayer = new Konva.Layer()
     stage.add(this.virtualLayer)
@@ -192,35 +195,31 @@ export default class Crop extends Plugin {
     if (!this.isPaint) return
     if (document.getElementById(this.toolbarId)) return
 
-    const { stage } = drawEventPramas
-    const endPos = PointUtil.getPointPos(stage);
+    const { stage } = drawEventPramas;
+    let endPos = PointUtil.getPointPos(stage);
     // 绘制初始裁剪区域
-    this.rect.width(endPos.x - this.getRectX())
-    this.rect.height(endPos.y - this.getRectY())
-    /**@todo zoomin模式的drag bound */
+    const startPos = PointUtil.getPointPos(stage, { x: this.getRectX(), y: this.getRectY() });
+    const img = ImageUtil.getImage(stage);
+    endPos = {
+      x: PointUtil.boundpos(endPos.x, [0, 0], [img.x(), img.x() + img.width()]),
+      y: PointUtil.boundpos(endPos.y, [0, 0], [img.y(), img.y() + img.height()]),
+    };
+    // 限制大小
+    this.rect.width((endPos.x - startPos.x));
+    this.rect.height(endPos.y - startPos.y);
+    // 拖拽范围
     this.rect.dragBoundFunc((pos: any) => {
       pos = PointUtil.getPointPos(stage, pos);
-      let { x, y } = pos;
-      const cur = ImageUtil.getImage(stage);
-      if (this.transformer.width() >= 0) {
-        if (pos.x <= cur.x()) x = cur.x();
-        if (pos.x >= cur.width() - this.transformer.width() + cur.x()) x = cur.width() - this.transformer.width() + cur.x();
-      } else {
-        if (pos.x >= cur.width() + cur.x()) x = cur.width() + cur.x()
-        if (pos.x <= cur.x() - this.transformer.width()) x = - this.transformer.width() + cur.x()
-      }
-
-      if (this.transformer.height() >= 0) {
-        if (pos.y <= cur.y()) y = cur.y()
-        if (pos.y >= cur.height() - this.transformer.height() + cur.y()) y = cur.height() - this.transformer.height() + cur.y()
-      } else {
-        if (pos.y >= cur.height() + cur.y()) y = cur.height() + cur.y()
-        if (pos.y <= - this.transformer.height() + cur.y()) y = - this.transformer.height() + cur.y()
-      }
 
       this.adjustToolbarPosition(stage)
-      const point = PointUtil.getOriPos(stage, { x, y });
-      return point;
+      const { x, y } = pos;
+      const trans = this.transformer;
+      const point = {
+        x: PointUtil.boundpos(x, [0, trans.width()], [img.x(), img.x() + img.width()]),
+        y: PointUtil.boundpos(y, [0, trans.height()], [img.y(), img.y() + img.height()])
+      };
+      // 映射回原值
+      return PointUtil.getOriPos(stage, point);
     })
 
     this.virtualLayer.draw()
@@ -245,50 +244,20 @@ export default class Crop extends Plugin {
         let y = newBox.y
         let width = newBox.width
         let height = newBox.height
+        // 把位置点和对角点的范围限制在bound内
         const img = ImageUtil.getImage(stage);
-        if (newBox.width >= 0) {
-          if (newBox.x <= img.x()) {
-            x = img.x()
-            width = newBox.width + newBox.x - img.x()
-          }
-
-          if (newBox.x >= img.width() - newBox.width + img.x()) {
-            width = img.width() - oldBox.x + img.x()
-          }
-        } else {
-          if (newBox.x >= img.width() + img.x()) {
-            x = img.width() + img.x();
-            width = newBox.width + (newBox.x - img.width() - img.x())
-          }
-
-          if (newBox.x <= - newBox.width + img.x()) {
-            width = img.x() - oldBox.x
-          }
-        }
-
-        if (newBox.height >= 0) {
-          if (newBox.y <= img.y()) {
-            y = img.y();
-            height = newBox.height + newBox.y - img.y()
-          }
-
-          if (newBox.y >= img.height() - newBox.height + img.y()) {
-            height = img.height() - oldBox.y + img.y();
-          }
-        } else {
-          if (newBox.y >= img.height() + img.y()) {
-            y = img.height() + img.y();
-            height = newBox.height + (newBox.y - img.height() - img.y())
-          }
-
-          if (newBox.y <= - newBox.height + img.y()) {
-            height = img.y() - oldBox.y
-          }
-        }
-
-
+        let start = { x: newBox.x, y: newBox.y };
+        let end = { x: newBox.x + newBox.width, y: newBox.y + newBox.height };
+        start = {
+          x: PointUtil.boundpos(start.x, [0, 0], [img.x(), img.x() + img.width()]),
+          y: PointUtil.boundpos(start.y, [0, 0], [img.y(), img.y() + img.height()]),
+        };
+        end = {
+          x: PointUtil.boundpos(end.x, [0, 0], [img.x(), img.x() + img.width()]),
+          y: PointUtil.boundpos(end.y, [0, 0], [img.y(), img.y() + img.height()]),
+        };
         this.adjustToolbarPosition(stage)
-        return { x, y, width, height } as any
+        return { x: start.x, y: start.y, width: end.x - start.x, height: end.y - start.y } as any
       },
     })
     this.virtualLayer.add(this.transformer)
@@ -326,6 +295,11 @@ export default class Crop extends Plugin {
   onLeave = (drawEventPramas: DrawEventPramas) => {
     const { stage } = drawEventPramas
     this.reset(stage)
+    const img = ImageUtil.getImage(stage);
+    if (img) {
+      img.off('mouseenter')
+      img.off('mouseleave')
+    }
     stage.container().style.cursor = 'default'
     this.isPaint = false
   }

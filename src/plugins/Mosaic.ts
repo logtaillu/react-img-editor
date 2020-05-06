@@ -4,6 +4,7 @@ import Plugin from './Plugin'
 import { DrawEventPramas, PluginParamValue, PluginParamName } from '../type'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
+import ImageUtil from '../tools/ImageUtil'
 
 const tileHeight = 5
 const tileWidth = 5
@@ -25,7 +26,8 @@ export default class Mosaic extends Plugin {
   height = 0
   rectGroup: any = null
 
-  drawTile = (tiles: any, layer: any) => {
+  drawTile = (tiles: any, drawEventPramas) => {
+    const { layer, stage } = drawEventPramas;
     tiles = [].concat(tiles)
     tiles.forEach((tile: any) => {
       if (tile.isFilled) {
@@ -53,8 +55,9 @@ export default class Mosaic extends Plugin {
       }
 
       const color = tile.color
-      const x = tile.column * tileWidth
-      const y = tile.row * tileHeight
+      const img = ImageUtil.getImage(stage);
+      const x = tile.column * tileWidth + img.x()
+      const y = tile.row * tileHeight + img.y()
       const w = tile.pixelWidth
       const h = tile.pixelHeight
 
@@ -95,14 +98,16 @@ export default class Mosaic extends Plugin {
   }
 
   onDrawStart = (drawEventPramas: DrawEventPramas) => {
-    const {stage, imageData} = drawEventPramas
+    const { stage, imageData } = drawEventPramas
     this.tiles = []
-    this.width = stage.width()
-    this.height = stage.height()
+    const img = ImageUtil.getImage(stage);
+    this.width = img.width();
+    this.height = img.height();
+    // 总是渲染在图片右边了
     this.tileRowSize = Math.ceil(this.height / tileHeight)
     this.tileColumnSize = Math.ceil(this.width / tileWidth)
 
-    this.rectGroup = new Konva.Group({id: uuid()})
+    this.rectGroup = new Konva.Group({ id: uuid() })
 
     // 将图片切分成一个个大一点的贴片
     for (let i = 0; i < this.tileRowSize; i++) {
@@ -138,14 +143,20 @@ export default class Mosaic extends Plugin {
   onDraw = (drawEventPramas: DrawEventPramas) => {
     if (!this.isPaint) return
 
-    const {stage, layer, paramValue} = drawEventPramas
-    const strokeWidth = (paramValue && paramValue.strokeWidth) ? paramValue.strokeWidth : this.defalutParamValue.strokeWidth
-    const pos = PointUtil.getPointPos(stage);
-    this.drawTile(this.getTilesByPoint(pos.x, pos.y, strokeWidth!), layer)
+    const { stage, paramValue } = drawEventPramas
+    let strokeWidth = (paramValue && paramValue.strokeWidth) ? paramValue.strokeWidth : this.defalutParamValue.strokeWidth;
+    strokeWidth = strokeWidth * stage.scaleX();
+    let pos = PointUtil.getPointPos(stage);
+    const img = ImageUtil.getImage(stage);
+    const imgpos = img.position();
+    // 图片范围内draw
+    if (PointUtil.isPointInImage(pos, img)) {
+      this.drawTile(this.getTilesByPoint(pos.x - imgpos.x, pos.y - imgpos.y, strokeWidth!), drawEventPramas)
+    }
   }
 
   onDrawEnd = (drawEventPramas: DrawEventPramas) => {
-    const {historyStack} = drawEventPramas
+    const { historyStack } = drawEventPramas
     this.isPaint = false
     historyStack.push(this.rectGroup.toObject())
   }
