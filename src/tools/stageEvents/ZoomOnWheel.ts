@@ -12,7 +12,7 @@ export function ZoomByScale(params: DrawEventPramas, newScale: number, isCenter 
 
 function canScale(params: any, nowscale: number) {
     const { zoom, stage } = params;
-    nowscale = stage.pixelRatio ? nowscale / stage.pixelRatio: nowscale;
+    nowscale = stage.pixelRatio ? nowscale / stage._pixelRatio: nowscale;
     const zoomconf = ZoomUtil.getZoomConfig(zoom);
     const ratein = !zoomconf.minrate || (nowscale >= zoomconf.minrate);
     const sizein = !zoomconf.minsize || (stage.height() * nowscale >= zoomconf.minsize && stage.width() * nowscale >= zoomconf.minsize);
