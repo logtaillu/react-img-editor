@@ -6,7 +6,9 @@ import PointUtil from "./PointUtil";
 const ImageUtil = {
     // 获取图片元素
     getImage(stage: any) {
-        return stage.getLayers()[0].children[0];
+        const layers = stage && stage.getLayers && stage.getLayers();
+        const img = layers && layers[0] && layers[0].children && layers[0].children[0];
+        return img;
     },
     // 获取当前图片信息
     getImageInfo(stage: Stage, eleinfo?: any) {

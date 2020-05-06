@@ -27,13 +27,17 @@ interface ReactImageEditorProps {
   active?: boolean; // 是否激活，控制销毁
   loadingComponent?: any; // 加载中状态组件
   zoom?: IZoomConfig; // 缩放配置
+  activeResize?: boolean; // 非active时是否resize
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null)
+  const [actived, setActived] = useState<boolean>(false);
   useEffect(() => {
     if (!props.active) {
       handlePluginChange({} as any);
+    } else {
+      setActived(true);
     }
   }, [props.active]);
   useEffect(() => {
@@ -43,14 +47,16 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
   }, []);
 
   useEffect(() => {
-    const image = new Image()
-    image.onload = () => {
-      setImageObj(image)
+    if (actived) {
+      const image = new Image()
+      image.onload = () => {
+        setImageObj(image)
+      }
+      image.crossOrigin = 'anonymous'
+      image.setAttribute("crossOrigin", "anonymous");
+      image.src = props.src
     }
-    image.crossOrigin = 'anonymous'
-    image.setAttribute("crossOrigin", "anonymous");
-    image.src = props.src
-  }, [props.src])
+  }, [props.src, actived])
 
   const pluginFactory = new PluginFactory()
   const plugins = [...pluginFactory.plugins, ...props.plugins!]
@@ -94,7 +100,10 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     height: props.height + 'px',
     ...props.style,
   }
-  const zoomin = ZoomUtil.getZoomConfig(props.zoom).innerzoom?"zoom":"outzoom";
+  const zoomin = ZoomUtil.getZoomConfig(props.zoom).innerzoom ? "zoom" : "outzoom";
+  if (!actived) {
+    return <div />;
+  }
   return (
     <div className={"react-img-editor"+" " + zoomin} style={style}>
       {
@@ -111,6 +120,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
               handlePluginChange={handlePluginChange}
               stageEvents={props.stageEvents || []}
               active={props.active}
+              activeResize={props.activeResize}
               zoom={props.zoom}
             />
             <Toolbar width={props.width!}
@@ -137,5 +147,6 @@ ReactImageEditor.defaultProps = {
   toolbar: {
     items: ['pen', 'eraser', 'line', 'arrow', 'rect', 'circle', 'mosaic', 'text', 'repeal', 'download', 'crop', 'rotate', 'zoomin', 'zoomout'],
   },
-  active: true
+  active: true,
+  activeResize: false
 } as Partial<ReactImageEditorProps>

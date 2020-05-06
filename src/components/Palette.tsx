@@ -9,6 +9,7 @@ import DragWrapper from './DragWrapper'
 import PointUtil from '../tools/PointUtil'
 import ZoomUtil from '../tools/ZoomUtil'
 import ImageUtil from "../tools/ImageUtil";
+import { ZoomByScale } from "../tools/stageEvents/ZoomOnWheel";
 interface PaletteProps {
   width: number;
   height: number;
@@ -21,6 +22,7 @@ interface PaletteProps {
   stageEvents: string[];
   active?: boolean;
   zoom?: IZoomConfig;
+  activeResize?: boolean;
 }
 
 export default function Palette(props: PaletteProps) {
@@ -212,18 +214,20 @@ export default function Palette(props: PaletteProps) {
     })
     const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
       ImageUtil.getImage(stageRef.current);
-    target.on("mouseenter", (e: any) => {
-      if (!currentPlugin) {
-        stageRef.current.draggable(true);
-        stageRef.current.container().style.cursor = 'move';
-      }
-    });
-    target.on("mouseleave", (e: any) => {
-      if (!currentPlugin) {
-        stageRef.current.draggable(false);
-        stageRef.current.container().style.cursor = 'default';
-      }
-    });
+    if (target) {
+      target.on("mouseenter", (e: any) => {
+        if (!currentPlugin) {
+          stageRef.current.draggable(true);
+          stageRef.current.container().style.cursor = 'move';
+        }
+      });
+      target.on("mouseleave", (e: any) => {
+        if (!currentPlugin) {
+          stageRef.current.draggable(false);
+          stageRef.current.container().style.cursor = 'default';
+        }
+      });
+    }
   }
 
   function removeEvents() {
@@ -235,8 +239,10 @@ export default function Palette(props: PaletteProps) {
     stageRef.current.off('mouseup touchend')
     const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
       ImageUtil.getImage(stageRef.current);
-    target.off('mouseenter')
-    target.off('mouseleave')
+    if (target) {
+      target.off('mouseenter')
+      target.off('mouseleave')
+    }
   }
 
   function reload(imgObj: any, width: number, height: number, imgInfo?: any) {
@@ -310,6 +316,9 @@ export default function Palette(props: PaletteProps) {
     if (stageRef && stageRef.current) {
       if (!props.active) {
         setSaveSize(stageRef.current.size());
+        if (props.activeResize) {
+          ZoomByScale(getDrawEventPramas(null), 1 / stageRef.current.scaleX(), true);
+        }
         stageRef.current.size({ width: 0, height: 0 });
         stageRef.current.batchDraw();
         // stageRef.current.clear();
