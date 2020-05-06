@@ -48,6 +48,7 @@ export default class Rotate extends Plugin {
         const { stage } = drawEventPramas;
         const off = stage.offset();
         const rotation = stage.rotation();
+        // 原中点相对于左上角 [0,0]的位置
         const ori = PointUtil.getInnerCenter(stage);
         let half = { x: stage.width() * stage.scaleX() / 2, y: stage.height() * stage.scaleY() / 2 };
         // 拖回0点
@@ -59,6 +60,7 @@ export default class Rotate extends Plugin {
         stage.setOffset(off);
 
         // 把现在的中点拖回原来的中点
+        // 当前中点点相对左上角[0,0]的位置
         const now = PointUtil.getInnerCenter(stage);
         const newPos = {
             x: ori.x - now.x,

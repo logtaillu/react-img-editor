@@ -311,14 +311,59 @@ export default function Palette(props: PaletteProps) {
     }
   }, [props.imageObj, props.currentPlugin, props.currentPluginParamValue])
   // 临时处理
-  const [saveSize, setSaveSize] = useState<HTMLImageElement | null>(null)
+  const [saveSize, setSaveSize] = useState<{ width: number, height: number } | null>(null);
+
+  // 范围改变
+  useEffect(() => {
+    if (stageRef && stageRef.current) {
+      if (props.active) {
+        stageRef.current.size({ width: props.width, height: props.height });
+      }
+      const func = stageRef.current.getDragBoundFunc();
+      const pos = stageRef.current.position();
+      if (ZoomUtil.getZoomConfig(props.zoom).innerzoom) {
+        setSaveSize({ width: props.width, height: props.height });
+        const img = ImageUtil.getImage(stageRef.current);
+        if (img) {
+          const oldpos = img.position();
+          img.position({ x: (props.width - img.width()) / 2, y: (props.height - img.height()) / 2 });
+          const newpos = img.position();
+          stageRef.current.position({ x: stageRef.current.x() + oldpos.x - newpos.x, y: stageRef.current.y() + oldpos.y - newpos.y });
+        }
+      }
+      if (func) {
+        stageRef.current.position(func(pos));
+        stageRef.current.batchDraw();
+      }
+    }
+  }, [props.width, props.height]);
+
   useEffect(() => {
     if (stageRef && stageRef.current) {
       if (!props.active) {
-        setSaveSize(stageRef.current.size());
         if (props.activeResize) {
+          // 重置缩放
           ZoomByScale(getDrawEventPramas(null), 1 / stageRef.current.scaleX(), true);
+          // 归位
+          if (ZoomUtil.getZoomConfig(props.zoom).innerzoom) {
+            // 当前中点相对于[0,0]的位置
+            const now = PointUtil.getInnerCenter(stageRef && stageRef.current);
+            // 初始中点(stage.position(0,0)时)的中点位置
+            const stage = stageRef.current;
+            const ori = { x: stage.width() * stage.scaleX() / 2, y: stage.height() * stage.scaleY() / 2 }
+            const newPos = { x: ori.x - now.x + stage.x(), y: ori.y - now.y + stage.y() };
+            const func = stageRef.current.getDragBoundFunc();
+            stageRef.current.position(func ? func(newPos) : newPos);
+          } else {
+            stageRef.current.position({ x: 0, y: 0 });
+            if (dragRef && dragRef.current) {
+              const dragNode = dragRef.current;
+              const center = PointUtil.getCenterPos(dragNode);
+              dragNode.setPos({ x: center.x, y: center.y });
+            }
+          }
         }
+        setSaveSize(stageRef.current.size());
         stageRef.current.size({ width: 0, height: 0 });
         stageRef.current.batchDraw();
         // stageRef.current.clear();
