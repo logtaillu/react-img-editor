@@ -9,6 +9,7 @@ function getZoomConfig(zoom?: IZoomConfig): {
     period: number;
     wheelrate: number;
     innerzoom: boolean;
+    dragTarget: "img" | "stage";
 } {
     const res: any = {};
     const defaultval = {
@@ -19,11 +20,12 @@ function getZoomConfig(zoom?: IZoomConfig): {
         maxsize: 0,
         minsize: 0,
         wheelrate: ZOOM_WHEEL_RATE,
-        innerzoom: false
+        innerzoom: false,
+        dragTarget: "stage"
     };
     Object.keys(defaultval).map(key => {
         const val = zoom && zoom[key];
-        res[key] =  val === null || val === undefined ? defaultval[key] : val;
+        res[key] = val === null || val === undefined ? defaultval[key] : val;
     });
     return res;
 }

@@ -32,4 +32,5 @@ export interface IZoomConfig {
   period?: number;
   wheelrate?: number;
   innerzoom?: boolean;
+  dragTarget?: "img" | "stage"
 }

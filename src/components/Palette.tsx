@@ -65,7 +65,7 @@ export default function Palette(props: PaletteProps) {
   function getDragInfo() {
     const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
     return {
-      draggable: zoomconfig.innerzoom,
+      draggable: zoomconfig.innerzoom && zoomconfig.dragTarget === "stage",
       // 限制在四边内
       dragBoundFunc: zoomconfig.innerzoom ? pos => {
         const stage = stageRef && stageRef.current;
@@ -210,13 +210,17 @@ export default function Palette(props: PaletteProps) {
         currentPlugin.onDrawEnd(getDrawEventPramas(e))
       }
     })
-    stageRef.current.on("mouseenter", (e: any) => {
+    const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
+      ImageUtil.getImage(stageRef.current);
+    target.on("mouseenter", (e: any) => {
       if (!currentPlugin) {
+        stageRef.current.draggable(true);
         stageRef.current.container().style.cursor = 'move';
       }
     });
-    stageRef.current.on("mouseleave", (e: any) => {
+    target.on("mouseleave", (e: any) => {
       if (!currentPlugin) {
+        stageRef.current.draggable(false);
         stageRef.current.container().style.cursor = 'default';
       }
     });
@@ -229,8 +233,10 @@ export default function Palette(props: PaletteProps) {
     stageRef.current.off('mousedown touchstart')
     stageRef.current.off('mousemove touchmove')
     stageRef.current.off('mouseup touchend')
-    stageRef.current.off('mouseenter')
-    stageRef.current.off('mouseleave')
+    const target = ZoomUtil.getZoomConfig(props.zoom).dragTarget === "stage" ? stageRef.current :
+      ImageUtil.getImage(stageRef.current);
+    target.off('mouseenter')
+    target.off('mouseleave')
   }
 
   function reload(imgObj: any, width: number, height: number, imgInfo?: any) {
