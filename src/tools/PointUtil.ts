@@ -1,7 +1,8 @@
 import DragWrapper from "../components/DragWrapper";
 import { isNum } from "../tools/HelperUitl";
+import { Stage } from "konva/types/Stage";
 const PointUtil = {
-    rotatePointRightAngle(point: { x, y }, rotation) {
+    rotatePointRightAngle(point: { x: number, y: number }, rotation: number) {
         const rotate = rotation * Math.PI / 180;
         // 因为我们只有90度单位的旋转
         const cos = parseInt(Math.cos(rotate).toFixed(0));
@@ -12,7 +13,7 @@ const PointUtil = {
         };
     },
     // 获取相对stage的无缩放坐标
-    getPointPos(stage: any, point?) {
+    getPointPos(stage: any, point?: { x: number, y: number }) {
         const pos = point || stage.getPointerPosition();
         const scale = stage.scale();
         let pointPos = {
@@ -24,8 +25,8 @@ const PointUtil = {
         return pointPos;
     },
     // 转换回实际坐标
-    getOriPos(stage, pos) {
-        const scale = stage.getScale();
+    getOriPos(stage: Stage, pos: { x: number, y: number }) {
+        const scale = stage.scale();
         const rotation = stage.rotation();
         pos = PointUtil.rotatePointRightAngle(pos, rotation);
         const pointPos = {
@@ -78,7 +79,7 @@ const PointUtil = {
             return val;
         }
     },
-    isPointInImage(pos, img) {
+    isPointInImage(pos: { x: number, y: number }, img: any) {
         const imgpos = img.position();
         return pos.x >= imgpos.x && pos.x <= (imgpos.x + img.width()) && pos.y >= imgpos.y && pos.y <= (imgpos.y + img.height());
     }

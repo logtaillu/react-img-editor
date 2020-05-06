@@ -48,7 +48,7 @@ export default function Palette(props: PaletteProps) {
   const dragRef = useRef<any>(null);
   // 有off过程(防止重复绑定)，需要在bindEvents之前
   function bindStageEvents() {
-    const maphandle = handle => (props.stageEvents || []).map(eventname => {
+    const maphandle = (handle: Function) => (props.stageEvents || []).map(eventname => {
       if (defaultStageEvents[eventname]) {
         const curevents = defaultStageEvents[eventname] || [];
         curevents.map(curevent => {
@@ -58,8 +58,8 @@ export default function Palette(props: PaletteProps) {
         })
       }
     });
-    maphandle(curevent => stageRef.current.off(curevent.eventName));
-    maphandle(curevent => stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
+    maphandle((curevent: any) => stageRef.current.off(curevent.eventName));
+    maphandle((curevent: any) => stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
   }
 
   function getDragInfo() {
@@ -67,7 +67,7 @@ export default function Palette(props: PaletteProps) {
     return {
       draggable: zoomconfig.innerzoom && zoomconfig.dragTarget === "stage",
       // 限制在四边内
-      dragBoundFunc: zoomconfig.innerzoom ? pos => {
+      dragBoundFunc: zoomconfig.innerzoom ? (pos: { x: number, y: number }) => {
         const stage = stageRef && stageRef.current;
         const img = ImageUtil.getImage(stage);
         if (!stage || !img) {

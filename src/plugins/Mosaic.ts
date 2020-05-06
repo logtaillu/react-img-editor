@@ -26,7 +26,7 @@ export default class Mosaic extends Plugin {
   height = 0
   rectGroup: any = null
 
-  drawTile = (tiles: any, drawEventPramas) => {
+  drawTile = (tiles: any, drawEventPramas: DrawEventPramas) => {
     const { layer, stage } = drawEventPramas;
     tiles = [].concat(tiles)
     tiles.forEach((tile: any) => {
@@ -141,11 +141,11 @@ export default class Mosaic extends Plugin {
   }
 
   onDraw = (drawEventPramas: DrawEventPramas) => {
+    const { stage, paramValue } = drawEventPramas
     if (!this.isPaint) return
 
-    const { stage, paramValue } = drawEventPramas
     let strokeWidth = (paramValue && paramValue.strokeWidth) ? paramValue.strokeWidth : this.defalutParamValue.strokeWidth;
-    strokeWidth = strokeWidth * stage.scaleX();
+    strokeWidth = (strokeWidth || 1) * stage.scaleX();
     let pos = PointUtil.getPointPos(stage);
     const img = ImageUtil.getImage(stage);
     const imgpos = img.position();

@@ -7,7 +7,7 @@ export default class Rotate extends Plugin {
     iconfont = 'iconfont icon-rotate';
     title = '旋转';
 
-    rotate(child: any, x: number, y: number, scale: { x: number, y: number }) {
+    rotate(child: any, x: number, y: number) {
         // 回0位
         child.setPosition({ x: 0, y: 0 });
         child.setOffset({ x: 0, y: 0 });
@@ -26,16 +26,15 @@ export default class Rotate extends Plugin {
     }
 
     onEnter = (drawEventPramas: DrawEventPramas) => {
-        const { layer, imageLayer, stage, dragNode, zoom } = drawEventPramas;
+        const { stage, dragNode, zoom } = drawEventPramas;
         const zoomconfig = ZoomUtil.getZoomConfig(zoom);
         if (zoomconfig.innerzoom) {
             this.innerRotate(drawEventPramas);
         } else {
             const { height, width } = stage.size();
             const pos = PointUtil.getCenterPos(dragNode);
-            const scale = stage.scale();
             stage.setSize({ width: height, height: width });
-            this.rotate(stage, height, width, scale);
+            this.rotate(stage, height, width);
             stage.batchDraw();
             const newPos = PointUtil.getCenterPos(dragNode);
             dragNode.resetPos({

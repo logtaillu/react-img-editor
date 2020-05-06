@@ -240,10 +240,6 @@ export default class Crop extends Plugin {
       node: this.rect,
       ...transformerStyle,
       boundBoxFunc: (oldBox: any, newBox: any) => {
-        let x = newBox.x
-        let y = newBox.y
-        let width = newBox.width
-        let height = newBox.height
         // 把位置点和对角点的范围限制在bound内
         const img = ImageUtil.getImage(stage);
         let start = { x: newBox.x, y: newBox.y };

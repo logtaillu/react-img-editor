@@ -4,7 +4,6 @@ import { DrawEventPramas, PluginParamValue, PluginParamName } from '../type'
 import { transformerStyle } from '../constants'
 import { uuid } from '../utils'
 import PointUtil from '../tools/PointUtil'
-import ZoomUtil from '../tools/ZoomUtil'
 
 export default class Text extends Plugin {
   name = 'text'

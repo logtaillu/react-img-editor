@@ -1,4 +1,3 @@
-import ZoomUtil from "./ZoomUtil";
 import { IZoomConfig } from "../type";
 import { Stage } from "konva/types/Stage";
 import PointUtil from "./PointUtil";
@@ -10,7 +9,7 @@ const ImageUtil = {
         return stage.getLayers()[0].children[0];
     },
     // 获取当前图片信息
-    getImageInfo(stage: Stage, eleinfo?) {
+    getImageInfo(stage: Stage, eleinfo?: any) {
         const rotate = stage.rotation();
         const img = ImageUtil.getImage(stage);
         const info = eleinfo || { ...img.size(), ...img.position() };
@@ -28,7 +27,7 @@ const ImageUtil = {
         return { ...rotateGap, width: rotateSize.x, height: rotateSize.y };
     },
     // 获取图片区域
-    getStageArea(stage: any, eleinfo?) {
+    getStageArea(stage: any, eleinfo?: any) {
         const info = ImageUtil.getImageInfo(stage, eleinfo);
         return {
             x: info.x + stage.x() + Math.min(0, info.width),
@@ -40,11 +39,10 @@ const ImageUtil = {
     // 获取下载用canvas
     getImageCanvas(params: { stage: any, zoom?: IZoomConfig }) {
         const { stage } = params;
-        const zoomin = ZoomUtil.getZoomConfig(params.zoom).innerzoom;
         // 缩放回原始大小
         const scale = stage.scale();
         stage.scale({ x: 1, y: 1 });
-        let canvas = stage.toCanvas({ pixelRatio: stage.pixelRatio, ...ImageUtil.getStageArea(stage) }) 
+        let canvas = stage.toCanvas({ pixelRatio: stage.pixelRatio, ...ImageUtil.getStageArea(stage) })
         stage.scale(scale);
         return canvas;
     }
