@@ -62,12 +62,9 @@ export default function Palette(props: PaletteProps) {
     maphandle(curevent => stageRef.current.on(curevent.eventName, (e: any) => curevent.handle(getDrawEventPramas(e), e)));
   }
 
-  function initPalette() {
+  function getDragInfo() {
     const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
-    const size = zoomconfig.innerzoom ? style : { width: canvasWidth, height: canvasHeight };
-    stageRef.current = new Konva.Stage({
-      container: containerIdRef.current,
-      ...size,
+    return {
       draggable: zoomconfig.innerzoom,
       // 限制在四边内
       dragBoundFunc: zoomconfig.innerzoom ? pos => {
@@ -84,6 +81,16 @@ export default function Palette(props: PaletteProps) {
           y: PointUtil.boundpos(y, [info.y, info.y + info.height], [0, stage.height()])
         };
       } : undefined
+    };
+  }
+
+  function initPalette() {
+    const zoomconfig = ZoomUtil.getZoomConfig(props.zoom);
+    const size = zoomconfig.innerzoom ? style : { width: canvasWidth, height: canvasHeight };
+    stageRef.current = new Konva.Stage({
+      container: containerIdRef.current,
+      ...size,
+      ...getDragInfo()
     })
 
     stageRef.current._pixelRatio = pixelRatio;
@@ -233,6 +240,7 @@ export default function Palette(props: PaletteProps) {
       container: containerIdRef.current,
       width: width,
       height: height,
+      ...getDragInfo()
     })
     stageRef.current._pixelRatio = pixelRatio
     props.getStage && props.getStage(stageRef.current)

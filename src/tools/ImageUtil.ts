@@ -10,37 +10,32 @@ const ImageUtil = {
         return stage.getLayers()[0].children[0];
     },
     // 获取当前图片信息
-    getImageInfo(stage: Stage) {
+    getImageInfo(stage: Stage, eleinfo?) {
         const rotate = stage.rotation();
         const img = ImageUtil.getImage(stage);
+        const info = eleinfo || { ...img.size(), ...img.position() };
         const newsize = {
-            x: img.width() * stage.scaleX(),
-            y: img.height() * stage.scaleY()
+            x: info.width * stage.scaleX(),
+            y: info.height * stage.scaleY()
         };
         // 图片原点相对于实际原点的偏移
         const gap = {
-            x: img.x() * stage.scaleX(),
-            y: img.y() * stage.scaleY()
+            x: info.x * stage.scaleX(),
+            y: info.y * stage.scaleY()
         }
         const rotateSize = PointUtil.rotatePointRightAngle(newsize, rotate);
         const rotateGap = PointUtil.rotatePointRightAngle(gap, rotate);
         return { ...rotateGap, width: rotateSize.x, height: rotateSize.y };
     },
     // 获取图片区域
-    getStageArea(stage: any) {
-        const rotation = stage.rotation();
-        const num = Math.floor(rotation / 90);
-        const img = ImageUtil.getImage(stage);
-        const size = img.size();
-        const gap = img.position();
-        const pos = stage.position();
-        const configs = [
-            { ...size, x: pos.x + gap.x, y: pos.y + gap.y },
-            { x: pos.x - size.height - gap.y, y: pos.y + gap.x, width: size.height, height: size.width },
-            { x: pos.x - size.width - gap.x, y: pos.y - size.height - gap.y, ...size },
-            { x: pos.x + gap.y, y: pos.y - size.width - gap.x, width: size.height, height: size.width }
-        ];
-        return configs[num];
+    getStageArea(stage: any, eleinfo?) {
+        const info = ImageUtil.getImageInfo(stage, eleinfo);
+        return {
+            x: info.x + stage.x() + Math.min(0, info.width),
+            y: info.y + stage.y() + Math.min(0, info.height),
+            width: Math.abs(info.width),
+            height: Math.abs(info.height)
+        }
     },
     // 获取下载用canvas
     getImageCanvas(params: { stage: any, zoom?: IZoomConfig }) {

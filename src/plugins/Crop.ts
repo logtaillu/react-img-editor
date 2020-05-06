@@ -269,18 +269,19 @@ export default class Crop extends Plugin {
 
       // 提前清除拉伸框
       this.virtualLayer.remove(this.transformer)
+      const info = ImageUtil.getStageArea(stage, this.rect.getClientRect({ skipTransform: false }));
       const dataURL = stage.toDataURL({
-        x: this.getRectX(),
-        y: this.getRectY(),
-        width: this.getRectWidth(),
-        height: this.getRectHeight(),
+        ...info,
         pixelRatio,
         mimeType: 'image/jpeg',
       })
       const imageObj = new Image()
       imageObj.onload = () => {
-        /**@todo zoomin模式的图片裁剪：保持canvas size,保持图片位置，不要黑框 */
-        reload(imageObj, this.getRectWidth(), this.getRectHeight())
+        if (ZoomUtil.getZoomConfig(drawEventPramas.zoom).innerzoom) {
+          reload(imageObj, stage.width(), stage.height(), info);
+        } else {
+          reload(imageObj, info.width, info.height)
+        }
         this.reset(stage)
       }
       imageObj.src = dataURL
