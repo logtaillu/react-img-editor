@@ -171,6 +171,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _src_index__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../src/index */ "./src/index.tsx");
 /* harmony import */ var _assets_index_less__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../assets/index.less */ "./assets/index.less");
 /* harmony import */ var _assets_index_less__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_assets_index_less__WEBPACK_IMPORTED_MODULE_3__);
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 
 
 
@@ -179,35 +191,62 @@ __webpack_require__.r(__webpack_exports__);
 function Example() {
   var stageRef = Object(react__WEBPACK_IMPORTED_MODULE_0__["useRef"])(null);
 
+  var _useState = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(true),
+      _useState2 = _slicedToArray(_useState, 2),
+      active = _useState2[0],
+      setActive = _useState2[1];
+
+  var closefunc = null;
+
   function setStage(stage) {
     stageRef.current = stage;
   }
 
   function downloadImage() {
-    var canvas = stageRef.current.toCanvas({
-      pixelRatio: stageRef.current._pixelRatio
-    });
-    canvas.toBlob(function (blob) {
-      var link = document.createElement('a');
-      link.download = '';
-      link.href = URL.createObjectURL(blob);
-      link.click();
-    }, 'image/jpeg');
+    var handle = function handle() {
+      var canvas = _src_index__WEBPACK_IMPORTED_MODULE_2__["ImageUtil"].getImageCanvas({
+        stage: stageRef.current,
+        zoom: {
+          innerzoom: true
+        }
+      });
+      canvas.toBlob(function (blob) {
+        var link = document.createElement('a');
+        link.download = '';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        link.remove();
+      }, 'image/jpeg');
+    };
+
+    if (closefunc) {
+      closefunc();
+      setTimeout(handle, 100);
+    } else {
+      handle();
+    }
   }
 
   var image1 = 'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0';
   var image2 = 'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'; // const image3 = 'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'
   // const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'
 
-  return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_src_index__WEBPACK_IMPORTED_MODULE_2__["default"], {
+  return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_src_index__WEBPACK_IMPORTED_MODULE_2__["default"], {
     src: image1,
     plugins: [],
     width: 800,
     getStage: setStage,
     defaultPluginName: "",
-    stageEvents: ["zoomOnWheel"],
+    stageEvents: ["zoomOnWheel", "zoomOnTouch"],
     style: {
       border: "1px solid #ddd"
+    },
+    zoom: {
+      innerzoom: true
+    },
+    active: active,
+    closePlugin: function closePlugin(func) {
+      return closefunc = func;
     }
   }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     style: {
@@ -215,7 +254,11 @@ function Example() {
     }
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
     onClick: downloadImage
-  }, "download")));
+  }, "download"), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+    onClick: function onClick() {
+      return setActive(!active);
+    }
+  }, "active")));
 }
 
 react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Example, null), document.getElementById('__react-content'));

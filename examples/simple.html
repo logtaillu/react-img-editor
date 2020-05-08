@@ -269,54 +269,68 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
     </div>
     <div class="example" id="__react-content"></div>
 
-    <div class="highlight"><pre><code language="js"><span class="hljs-keyword">import</span> React, { useRef } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>
+    <div class="highlight"><pre><code language="js"><span class="hljs-keyword">import</span> React, { useRef, useState } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>
 <span class="hljs-keyword">import</span> ReactDOM <span class="hljs-keyword">from</span> <span class="hljs-string">'react-dom'</span>
-<span class="hljs-keyword">import</span> ReactImgEditor <span class="hljs-keyword">from</span> <span class="hljs-string">'../src/index'</span>
+<span class="hljs-keyword">import</span> ReactImgEditor, { ImageUtil } <span class="hljs-keyword">from</span> <span class="hljs-string">'../src/index'</span>
 <span class="hljs-keyword">import</span> <span class="hljs-string">'../assets/index.less'</span>
 
 function Example() {
   const stageRef = useRef&lt;any&gt;(null)
-
-  function setStage(stage) {
+  const [active, setActive] = useState&lt;boolean | null&gt;(true)
+  let closefunc = null;
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setStage</span>(<span class="hljs-params">stage</span>) </span>{
     stageRef.current = stage
   }
 
-  function downloadImage() {
-    const canvas = stageRef.current.toCanvas({ pixelRatio: stageRef.current._pixelRatio })
-    canvas.toBlob(function(blob: any) {
-      const link = document.createElement(<span class="hljs-string">'a'</span>)
-      link.download = <span class="hljs-string">''</span>
-      link.href = URL.createObjectURL(blob)
-      link.click()
-    }, <span class="hljs-string">'image/jpeg'</span>)
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">downloadImage</span>(<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">const</span> handle = () =&gt; {
+      <span class="hljs-keyword">const</span> canvas = ImageUtil.getImageCanvas({ stage: stageRef.current, zoom: { innerzoom: <span class="hljs-literal">true</span> } });
+      canvas.toBlob(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">blob: any</span>) </span>{
+        <span class="hljs-keyword">const</span> link = <span class="hljs-built_in">document</span>.createElement(<span class="hljs-string">'a'</span>)
+        link.download = <span class="hljs-string">''</span>
+        link.href = URL.createObjectURL(blob)
+        link.click()
+        link.remove();
+      }, <span class="hljs-string">'image/jpeg'</span>)
+    };
+    <span class="hljs-keyword">if</span> (closefunc) {
+      closefunc();
+      setTimeout(handle, <span class="hljs-number">100</span>);
+    } <span class="hljs-keyword">else</span> {
+      handle();
+    }
   }
 
-  const image1 = <span class="hljs-string">'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'</span>
-  const image2 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'</span>
-  // const image3 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'</span>
-  // const image4 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'</span>
+  <span class="hljs-keyword">const</span> image1 = <span class="hljs-string">'https://cstore-public.seewo.com/faq-service/4e3f2924f1d4432f82e760468bf680f0'</span>
+  <span class="hljs-keyword">const</span> image2 = <span class="hljs-string">'https://cvte-dev-public.seewo.com/faq-service-test/4db524ec93324794b983bf7cd78b2ae1'</span>
+  <span class="hljs-comment">// const image3 = 'https://cvte-dev-public.seewo.com/faq-service-test/bfdcc5337dfb43ce823a4c9743aba99c'</span>
+  <span class="hljs-comment">// const image4 = 'https://cvte-dev-public.seewo.com/faq-service-test/bc87ceeb7b1a473da41e025e656af966'</span>
 
-  return (
-    &lt;&gt;
-      &lt;ReactImgEditor
-        src={image1}
-        plugins={[]}
-        width={800}
-        getStage={setStage}
-        defaultPluginName=<span class="hljs-string">""</span>
-        stageEvents={[<span class="hljs-string">"zoomOnWheel"</span>]}
-        style={{border:<span class="hljs-string">"1px solid #ddd"</span>}}
+  <span class="hljs-keyword">return</span> (
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-title">div</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-title">ReactImgEditor</span>
+        <span class="hljs-attribute">src</span>=<span class="hljs-value">{image1}</span>
+        <span class="hljs-attribute">plugins</span>=<span class="hljs-value">{[]}</span>
+        <span class="hljs-attribute">width</span>=<span class="hljs-value">{800}</span>
+        <span class="hljs-attribute">getStage</span>=<span class="hljs-value">{setStage}</span>
+        <span class="hljs-attribute">defaultPluginName</span>=<span class="hljs-value">""</span>
+        <span class="hljs-attribute">stageEvents</span>=<span class="hljs-value">{["zoomOnWheel",</span> "<span class="hljs-attribute">zoomOnTouch</span>"]}
+        <span class="hljs-attribute">style</span>=<span class="hljs-value">{{</span> <span class="hljs-attribute">border:</span> "<span class="hljs-attribute">1px</span> <span class="hljs-attribute">solid</span> #<span class="hljs-attribute">ddd</span>" }}
+        <span class="hljs-attribute">zoom</span>=<span class="hljs-value">{{</span> <span class="hljs-attribute">innerzoom:</span> <span class="hljs-attribute">true</span> }}
+        <span class="hljs-attribute">active</span>=<span class="hljs-value">{active}</span>
+        <span class="hljs-attribute">closePlugin</span>=<span class="hljs-value">{func</span> =&gt;</span> closefunc = func}
       /&gt;
-      &lt;div style={{ marginTop: <span class="hljs-string">'50px'</span> }}&gt;
-        &lt;button onClick={downloadImage}&gt;download&lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/&gt;
-  )
+      <span class="hljs-tag">&lt;<span class="hljs-title">div</span> <span class="hljs-attribute">style</span>=<span class="hljs-value">{{</span> <span class="hljs-attribute">marginTop:</span> '<span class="hljs-attribute">50px</span>' }}&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">button</span> <span class="hljs-attribute">onClick</span>=<span class="hljs-value">{downloadImage}</span>&gt;</span>download<span class="hljs-tag">&lt;/<span class="hljs-title">button</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">button</span> <span class="hljs-attribute">onClick</span>=<span class="hljs-value">{()</span> =&gt;</span> setActive(!active)}&gt;active<span class="hljs-tag">&lt;/<span class="hljs-title">button</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-title">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-title">div</span>&gt;</span>
+  )</span>
 }
 
-ReactDOM.render(&lt;Example /&gt;, document.getElementById(<span class="hljs-string">'__react-content'</span>))</code></pre></div>
+ReactDOM.render(<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-title">Example</span> /&gt;</span>, document.getElementById('__react-content'))</span></code></pre></div>
   </div>
-  <a href="https://github.com/YaoKaiLun/react-img-editor#readme">
+  <a href="https://github.com/logtaillu/react-img-editor#readme">
     <img style="position: absolute; top: 0; right: 0; border: 0;"
          src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67"
          alt="Fork me on GitHub"
