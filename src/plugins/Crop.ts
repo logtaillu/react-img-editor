@@ -196,9 +196,11 @@ export default class Crop extends Plugin {
     if (document.getElementById(this.toolbarId)) return
 
     const { stage } = drawEventPramas;
+    // 鼠标位置
     let endPos = PointUtil.getPointPos(stage);
     // 绘制初始裁剪区域
-    const startPos = PointUtil.getPointPos(stage, { x: this.getRectX(), y: this.getRectY() });
+    // getClientRect的x,y始终是左上角坐标
+    const startPos = { x: this.rect && this.rect.x() || 0, y: this.rect && this.rect.y() || 0 };
     const img = ImageUtil.getImage(stage);
     endPos = {
       x: PointUtil.boundpos(endPos.x, [0, 0], [img.x(), img.x() + img.width()]),
