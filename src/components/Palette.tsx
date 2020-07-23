@@ -278,7 +278,7 @@ export default function Palette(props: PaletteProps) {
     imageLayer.add(img)
     imageLayer.draw()
     imageRef.current = imageLayer
-    imageData.current = generateImageData(imgObj, width, height)
+    imageData.current = generateImageData(imgObj, imgInfo ? imgInfo.width : width, imgInfo ? imgInfo.height : height)
 
     layerRef.current = new Konva.Layer()
     stageRef.current.add(layerRef.current)
@@ -322,8 +322,10 @@ export default function Palette(props: PaletteProps) {
   // 范围改变
   useEffect(() => {
     if (stageRef && stageRef.current) {
+      const innerzoom = ZoomUtil.getZoomConfig(props.zoom).innerzoom;
+      const size = innerzoom ? style : { width: canvasWidth, height: canvasHeight };
       if (props.active) {
-        stageRef.current.size({ width: props.width, height: props.height });
+        stageRef.current.size(size);
       }
       const func = stageRef.current.getDragBoundFunc();
       const pos = stageRef.current.position();
@@ -412,7 +414,7 @@ export default function Palette(props: PaletteProps) {
   // innerzoom时不使用draggable,disable掉
   return (
     <div className="offset-bound" style={style}>
-      <DragWrapper ref={node => dragRef.current = node} disabled={(!!props.currentPlugin) || config.innerzoom}>
+      <DragWrapper ref={node => dragRef.current = node} disabled={(!!props.currentPlugin) || config.innerzoom} style={{ width: canvasWidth, height: canvasHeight }}>
         <div className={`${prefixCls}-palette`}>
           <div id={containerIdRef.current} className={`${prefixCls}-container`} />
         </div>

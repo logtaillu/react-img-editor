@@ -29,6 +29,7 @@ interface ReactImageEditorProps {
   loadingComponent?: any; // 加载中状态组件
   zoom?: IZoomConfig; // 缩放配置
   activeResize?: boolean; // 非active时是否resize
+  className?: string;
 }
 
 export default function ReactImageEditor(props: ReactImageEditorProps) {
@@ -106,7 +107,7 @@ export default function ReactImageEditor(props: ReactImageEditorProps) {
     return <div />;
   }
   return (
-    <div className={"react-img-editor" + " " + zoomin} style={style}>
+    <div className={`react-img-editor ${zoomin} ${props.className||""}`} style={style}>
       {
         imageObj ? (
           <div>

@@ -15,16 +15,20 @@
     overflow: hidden;
     background-color: transparent;
   }
-  &.zoom .offset-bound>div,&-palette,&-container{
-    width: 100%;
-    height: 100%;
+  &.zoom{
+    .offset-bound>div,&-palette,&-container{
+      width: 100%;
+      height: 100%;
+    }
   }
   &-dragbox{
     display: inline-block;
   }
+  &.mosic &-palette{
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAAlPW0iAAAAA3NCSVQICAjb4U/gAAAABlBMVEXMzMz////TjRV2AAAACXBIWXMAAArrAAAK6wGCiw1aAAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1M26LyyjAAAABFJREFUCJlj+M/AgBVhF/0PAH6/D/HkDxOGAAAAAElFTkSuQmCC");
+  }
   &-palette {
     position: relative;
-    // background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAAlPW0iAAAAA3NCSVQICAjb4U/gAAAABlBMVEXMzMz////TjRV2AAAACXBIWXMAAArrAAAK6wGCiw1aAAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1M26LyyjAAAABFJREFUCJlj+M/AgBVhF/0PAH6/D/HkDxOGAAAAAElFTkSuQmCC");
     display: flex;
     align-items: center;
     justify-content: center;
