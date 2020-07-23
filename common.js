@@ -49690,7 +49690,7 @@ function Palette(props) {
     imageLayer.add(img);
     imageLayer.draw();
     imageRef.current = imageLayer;
-    imageData.current = generateImageData(imgObj, width, height);
+    imageData.current = generateImageData(imgObj, imgInfo ? imgInfo.width : width, imgInfo ? imgInfo.height : height);
     layerRef.current = new konva__WEBPACK_IMPORTED_MODULE_0___default.a.Layer();
     stageRef.current.add(layerRef.current);
     bindStageEvents();
@@ -49743,11 +49743,14 @@ function Palette(props) {
 
   Object(react__WEBPACK_IMPORTED_MODULE_1__["useEffect"])(function () {
     if (stageRef && stageRef.current) {
+      var innerzoom = _tools_ZoomUtil__WEBPACK_IMPORTED_MODULE_7__["default"].getZoomConfig(props.zoom).innerzoom;
+      var size = innerzoom ? style : {
+        width: canvasWidth,
+        height: canvasHeight
+      };
+
       if (props.active) {
-        stageRef.current.size({
-          width: props.width,
-          height: props.height
-        });
+        stageRef.current.size(size);
       }
 
       var func = stageRef.current.getDragBoundFunc();
@@ -49871,7 +49874,11 @@ function Palette(props) {
     ref: function ref(node) {
       return dragRef.current = node;
     },
-    disabled: !!props.currentPlugin || config.innerzoom
+    disabled: !!props.currentPlugin || config.innerzoom,
+    style: {
+      width: canvasWidth,
+      height: canvasHeight
+    }
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
     className: "".concat(_constants__WEBPACK_IMPORTED_MODULE_2__["prefixCls"], "-palette")
   }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
@@ -50400,7 +50407,7 @@ function ReactImageEditor(props) {
   }
 
   return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
-    className: "react-img-editor" + " " + zoomin,
+    className: "react-img-editor ".concat(zoomin, " ").concat(props.className || ""),
     style: style
   }, imageObj ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_components_Palette__WEBPACK_IMPORTED_MODULE_1__["default"], {
     width: props.width,
@@ -51171,13 +51178,15 @@ var Crop = /*#__PURE__*/function (_Plugin) {
     _this.onDraw = function (drawEventPramas) {
       if (!_this.isPaint) return;
       if (document.getElementById(_this.toolbarId)) return;
-      var stage = drawEventPramas.stage;
-      var endPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage); // 绘制初始裁剪区域
+      var stage = drawEventPramas.stage; // 鼠标位置
 
-      var startPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage, {
-        x: _this.getRectX(),
-        y: _this.getRectY()
-      });
+      var endPos = _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].getPointPos(stage); // 绘制初始裁剪区域
+      // getClientRect的x,y始终是左上角坐标
+
+      var startPos = {
+        x: _this.rect && _this.rect.x() || 0,
+        y: _this.rect && _this.rect.y() || 0
+      };
       var img = _tools_ImageUtil__WEBPACK_IMPORTED_MODULE_6__["default"].getImage(stage);
       endPos = {
         x: _tools_PointUtil__WEBPACK_IMPORTED_MODULE_4__["default"].boundpos(endPos.x, [0, 0], [img.x(), img.x() + img.width()]),
