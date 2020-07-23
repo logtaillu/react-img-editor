@@ -1,4 +1,4 @@
-## Forked from [YaoKaiLun/react-img-editor](https://github.com/YaoKaiLun/react-img-editor)
+## Forked from react-img-editor
 1. 添加缩放和旋转功能
 2. 根据自己项目需求修改了样式、字体等配置，处理canvas释放
 3. 背景图去除了，可以用`className="mosic"`加上(innerzoom下)
